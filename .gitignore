@@ -1,0 +1,43 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# SQLite database files
+*.db
+*.sqlite3
+
+# PyCharm / IDE files
+.idea/
+.vscode/
+
+# Qt Designer cache
+*.pyc
+
+# macOS
+.DS_Store
+
+# Logs and reports
+*.log
+coverage/
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# OS files
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+
+# Node modules (if any frontend tooling is added)
+node_modules/

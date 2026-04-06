@@ -1,0 +1,8 @@
+PyQt5==5.15.11
+SQLAlchemy==2.0.36
+bcrypt==4.2.1
+matplotlib==3.9.3
+reportlab==4.2.5
+openpyxl==3.1.5
+Pillow==11.0.0
+numpy==1.26.4
