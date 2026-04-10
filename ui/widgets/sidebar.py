@@ -41,7 +41,7 @@ class Sidebar(QWidget):
         # App logo / title
         header = QLabel("  \u267b  SWMS")
         header.setStyleSheet(
-            "color: #80A615; font-size: 18pt; font-weight: bold; "
+            "color: #52796A; font-size: 18pt; font-weight: bold; "
             "padding: 24px 16px 4px 16px;"
         )
         layout.addWidget(header)
@@ -49,14 +49,14 @@ class Sidebar(QWidget):
         # Version
         version_label = QLabel("  v1.0.0")
         version_label.setStyleSheet(
-            "color: #5A6A8A; font-size: 9pt; padding-left: 16px; padding-bottom: 10px;"
+            "color: #8A9095; font-size: 9pt; padding-left: 16px; padding-bottom: 10px;"
         )
         layout.addWidget(version_label)
 
         # Separator
         sep = QLabel()
         sep.setFixedHeight(1)
-        sep.setStyleSheet("background-color: #1C2541; margin: 0 14px;")
+        sep.setStyleSheet("background-color: #2E3338; margin: 0 14px;")
         layout.addWidget(sep)
 
         layout.addSpacing(14)
@@ -81,7 +81,7 @@ class Sidebar(QWidget):
         # User info / logout at bottom
         self.user_label = QLabel("")
         self.user_label.setStyleSheet(
-            "color: #A7AEC1; font-size: 9pt; padding: 8px 16px;"
+            "color: #BFC5C9; font-size: 9pt; padding: 8px 16px;"
         )
         self.user_label.setWordWrap(True)
         layout.addWidget(self.user_label)
@@ -90,7 +90,7 @@ class Sidebar(QWidget):
         self.logout_btn.setProperty("class", "sidebar-btn")
         self.logout_btn.setCursor(Qt.PointingHandCursor)
         self.logout_btn.setStyleSheet(
-            "color: #ef4444; text-align: left; padding: 12px 16px; "
+            "color: #E57373; text-align: left; padding: 12px 16px; "
             "margin: 2px 10px 18px 10px;"
         )
         layout.addWidget(self.logout_btn)

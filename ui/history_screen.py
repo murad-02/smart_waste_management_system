@@ -63,9 +63,9 @@ class HistoryScreen(QWidget):
     """Waste detection history with filtering, export, and detail view."""
 
     STATUS_COLORS = {
-        "pending": ("#FFC437", "#0B132B"),
-        "verified": ("#22c55e", "#FFFFFF"),
-        "rejected": ("#ef4444", "#FFFFFF"),
+        "pending": ("#FFC107", "#1A1D1F"),
+        "verified": ("#4CAF50", "#E5E5E5"),
+        "rejected": ("#E57373", "#1A1D1F"),
     }
 
     def __init__(self, current_user=None, parent=None):
@@ -82,7 +82,7 @@ class HistoryScreen(QWidget):
 
         # Header
         header = QLabel("Waste History")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
         layout.addWidget(header)
 
         # Filters row — styled card
@@ -94,7 +94,7 @@ class HistoryScreen(QWidget):
 
         # Category filter
         cat_label = QLabel("Category:")
-        cat_label.setStyleSheet("color: #A7AEC1;")
+        cat_label.setStyleSheet("color: #BFC5C9;")
         filter_layout.addWidget(cat_label)
         self.category_combo = QComboBox()
         self.category_combo.addItem("All Categories", "")
@@ -104,7 +104,7 @@ class HistoryScreen(QWidget):
 
         # Status filter
         status_label = QLabel("Status:")
-        status_label.setStyleSheet("color: #A7AEC1;")
+        status_label.setStyleSheet("color: #BFC5C9;")
         filter_layout.addWidget(status_label)
         self.status_combo = QComboBox()
         self.status_combo.addItem("All Statuses", "")
@@ -114,7 +114,7 @@ class HistoryScreen(QWidget):
 
         # Date range
         from_label = QLabel("From:")
-        from_label.setStyleSheet("color: #A7AEC1;")
+        from_label.setStyleSheet("color: #BFC5C9;")
         filter_layout.addWidget(from_label)
         self.date_from = QDateEdit()
         self.date_from.setDate(QDate.currentDate().addDays(-30))
@@ -122,7 +122,7 @@ class HistoryScreen(QWidget):
         filter_layout.addWidget(self.date_from)
 
         to_label = QLabel("To:")
-        to_label.setStyleSheet("color: #A7AEC1;")
+        to_label.setStyleSheet("color: #BFC5C9;")
         filter_layout.addWidget(to_label)
         self.date_to = QDateEdit()
         self.date_to.setDate(QDate.currentDate())
@@ -162,7 +162,16 @@ class HistoryScreen(QWidget):
             "ID", "Date/Time", "Category", "Confidence",
             "Fill Level", "Status", "Notes", "Actions"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)          # ID
+        header.setSectionResizeMode(3, QHeaderView.Fixed)          # Confidence
+        header.setSectionResizeMode(5, QHeaderView.Fixed)          # Status
+        header.setSectionResizeMode(7, QHeaderView.Fixed)          # Actions
+        self.table.setColumnWidth(0, 50)
+        self.table.setColumnWidth(3, 90)
+        self.table.setColumnWidth(5, 90)
+        self.table.setColumnWidth(7, 200)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -208,7 +217,7 @@ class HistoryScreen(QWidget):
             # Status badge via colored cell
             status_text = det.status.capitalize()
             status_item = QTableWidgetItem(status_text)
-            colors = self.STATUS_COLORS.get(det.status, ("#A7AEC1", "#0B132B"))
+            colors = self.STATUS_COLORS.get(det.status, ("#BFC5C9", "#1A1D1F"))
             status_item.setForeground(QColor(colors[1]))
             status_item.setBackground(QColor(colors[0]))
             self.table.setItem(row, 5, status_item)
@@ -218,38 +227,35 @@ class HistoryScreen(QWidget):
             # Action buttons
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(4, 2, 4, 2)
-            actions_layout.setSpacing(4)
+            actions_layout.setContentsMargins(4, 4, 4, 4)
+            actions_layout.setSpacing(6)
+            actions_layout.setAlignment(Qt.AlignCenter)
 
-            view_btn = QPushButton("\U0001f441  View")
-            view_btn.setFixedSize(65, 28)
+            view_btn = QPushButton("View")
             view_btn.setCursor(Qt.PointingHandCursor)
             view_btn.clicked.connect(lambda _, d=det: self._view_detail(d))
 
             verify_btn = QPushButton("\u2714")
-            verify_btn.setFixedSize(28, 28)
             verify_btn.setToolTip("Verify")
             verify_btn.setCursor(Qt.PointingHandCursor)
             verify_btn.setStyleSheet(
-                "background-color: #22c55e; color: white; border-radius: 6px;"
+                "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
             )
             verify_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "verified"))
 
             reject_btn = QPushButton("\u2718")
-            reject_btn.setFixedSize(28, 28)
             reject_btn.setToolTip("Reject")
             reject_btn.setCursor(Qt.PointingHandCursor)
             reject_btn.setStyleSheet(
-                "background-color: #ef4444; color: white; border-radius: 6px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
             )
             reject_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "rejected"))
 
             delete_btn = QPushButton("\U0001f5d1")
-            delete_btn.setFixedSize(28, 28)
             delete_btn.setToolTip("Delete")
             delete_btn.setCursor(Qt.PointingHandCursor)
             delete_btn.setStyleSheet(
-                "background-color: #ef4444; color: white; border-radius: 6px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
             )
             delete_btn.clicked.connect(lambda _, d=det: self._delete_detection(d.id))
 
@@ -257,6 +263,7 @@ class HistoryScreen(QWidget):
             actions_layout.addWidget(verify_btn)
             actions_layout.addWidget(reject_btn)
             actions_layout.addWidget(delete_btn)
+            actions_layout.addStretch()
 
             self.table.setCellWidget(row, 7, actions_widget)
 

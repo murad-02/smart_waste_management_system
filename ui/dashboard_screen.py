@@ -1,3 +1,4 @@
+
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, QScrollArea,
     QFrame, QSizePolicy
@@ -34,11 +35,11 @@ class DashboardScreen(QWidget):
         # Page header
         header = QLabel("Dashboard")
         header.setProperty("class", "screen-title")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
         layout.addWidget(header)
 
         subtitle = QLabel("Overview of waste management operations")
-        subtitle.setStyleSheet("color: #A7AEC1; font-size: 11pt; margin-bottom: 8px;")
+        subtitle.setStyleSheet("color: #BFC5C9; font-size: 11pt; margin-bottom: 8px;")
         layout.addWidget(subtitle)
 
         # Stat cards row — with icons
@@ -46,16 +47,16 @@ class DashboardScreen(QWidget):
         cards_layout.setSpacing(16)
 
         self.card_total = StatCard(
-            "Total Detections", "0", "All time", "#80A615", "\U0001f4e6"  # 📦
+            "Total Detections", "0", "All time", "#52796A", "\U0001f4e6"  # 📦
         )
         self.card_today = StatCard(
-            "Today's Detections", "0", "Since midnight", "#FFC437", "\U0001f4c5"  # 📅
+            "Today's Detections", "0", "Since midnight", "#FFC107", "\U0001f4c5"  # 📅
         )
         self.card_category = StatCard(
-            "Top Category", "N/A", "Most detected", "#3b82f6", "\U0001f3f7"  # 🏷
+            "Top Category", "N/A", "Most detected", "#64B5F6", "\U0001f3f7"  # 🏷
         )
         self.card_alerts = StatCard(
-            "Active Alerts", "0", "Unacknowledged", "#ef4444", "\U0001f514"  # 🔔
+            "Active Alerts", "0", "Unacknowledged", "#E57373", "\U0001f514"  # 🔔
         )
 
         cards_layout.addWidget(self.card_total)
@@ -75,7 +76,7 @@ class DashboardScreen(QWidget):
         pie_layout.setContentsMargins(18, 18, 18, 14)
 
         pie_title = QLabel("Waste Category Distribution")
-        pie_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
+        pie_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #E5E5E5;")
         self.pie_chart = ChartWidget(parent=self, width=5, height=3.5)
 
         pie_layout.addWidget(pie_title)
@@ -88,7 +89,7 @@ class DashboardScreen(QWidget):
         bar_layout.setContentsMargins(18, 18, 18, 14)
 
         bar_title = QLabel("Daily Detections (Last 7 Days)")
-        bar_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
+        bar_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #E5E5E5;")
         self.bar_chart = ChartWidget(parent=self, width=5, height=3.5)
 
         bar_layout.addWidget(bar_title)
@@ -105,7 +106,7 @@ class DashboardScreen(QWidget):
         trend_layout.setContentsMargins(18, 18, 18, 14)
 
         trend_title = QLabel("Detection Trend (Last 30 Days)")
-        trend_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
+        trend_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #E5E5E5;")
         self.trend_chart = ChartWidget(parent=self, width=10, height=3)
 
         trend_layout.addWidget(trend_title)

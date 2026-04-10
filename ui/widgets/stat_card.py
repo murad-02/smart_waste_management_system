@@ -7,7 +7,7 @@ class StatCard(QFrame):
     """Dashboard stat card with left icon, title, value, and subtitle."""
 
     def __init__(self, title: str, value: str, subtitle: str = "",
-                 color: str = "#80A615", icon: str = "", parent=None):
+                 color: str = "#52796A", icon: str = "", parent=None):
         super().__init__(parent)
         self.color = color
         self.setProperty("class", "stat-card")
@@ -25,7 +25,7 @@ class StatCard(QFrame):
             self.icon_label.setAlignment(Qt.AlignCenter)
             self.icon_label.setFixedSize(56, 56)
             self.icon_label.setStyleSheet(
-                f"background-color: rgba(128, 166, 21, 0.12); "
+                f"background-color: rgba(82, 121, 106, 0.15); "
                 f"border-radius: 12px; color: {color};"
             )
             main_layout.addWidget(self.icon_label, 0, Qt.AlignVCenter)
@@ -36,7 +36,7 @@ class StatCard(QFrame):
 
         # Title
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("color: #A7AEC1; font-size: 10pt;")
+        self.title_label.setStyleSheet("color: #BFC5C9; font-size: 10pt;")
         self.title_label.setAlignment(Qt.AlignLeft)
 
         # Value
@@ -48,7 +48,7 @@ class StatCard(QFrame):
 
         # Subtitle
         self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setStyleSheet("color: #A7AEC1; font-size: 9pt;")
+        self.subtitle_label.setStyleSheet("color: #8A9095; font-size: 9pt;")
         self.subtitle_label.setAlignment(Qt.AlignLeft)
 
         text_layout.addWidget(self.title_label)
@@ -69,12 +69,12 @@ class StatCard(QFrame):
         if active:
             self.setProperty("class", "stat-card-alert")
             self.value_label.setStyleSheet(
-                "color: #ef4444; font-size: 28pt; font-weight: bold;"
+                "color: #E57373; font-size: 28pt; font-weight: bold;"
             )
             if hasattr(self, "icon_label"):
                 self.icon_label.setStyleSheet(
-                    "background-color: rgba(239, 68, 68, 0.12); "
-                    "border-radius: 12px; color: #ef4444;"
+                    "background-color: rgba(229, 115, 115, 0.15); "
+                    "border-radius: 12px; color: #E57373;"
                 )
         else:
             self.setProperty("class", "stat-card")
@@ -83,7 +83,7 @@ class StatCard(QFrame):
             )
             if hasattr(self, "icon_label"):
                 self.icon_label.setStyleSheet(
-                    f"background-color: rgba(128, 166, 21, 0.12); "
+                    f"background-color: rgba(82, 121, 106, 0.15); "
                     f"border-radius: 12px; color: {self.color};"
                 )
         self.style().unpolish(self)

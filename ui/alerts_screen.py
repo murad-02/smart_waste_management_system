@@ -84,9 +84,9 @@ class AlertsScreen(QWidget):
     """Screen with tabs for alert rules and triggered alerts."""
 
     SEVERITY_COLORS = {
-        "critical": ("#ef4444", "#FFFFFF"),
-        "warning": ("#FFC437", "#0B132B"),
-        "info": ("#3b82f6", "#FFFFFF"),
+        "critical": ("#E57373", "#1A1D1F"),
+        "warning": ("#FFC107", "#1A1D1F"),
+        "info": ("#64B5F6", "#1A1D1F"),
     }
 
     def __init__(self, current_user=None, parent=None):
@@ -103,7 +103,7 @@ class AlertsScreen(QWidget):
 
         # Header
         header = QLabel("Alerts & Rules")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
         layout.addWidget(header)
 
         # Tabs
@@ -119,7 +119,14 @@ class AlertsScreen(QWidget):
         self.alerts_table.setHorizontalHeaderLabels([
             "ID", "Message", "Severity", "Triggered At", "Actions"
         ])
-        self.alerts_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        a_header = self.alerts_table.horizontalHeader()
+        a_header.setSectionResizeMode(QHeaderView.Stretch)
+        a_header.setSectionResizeMode(0, QHeaderView.Fixed)        # ID
+        a_header.setSectionResizeMode(2, QHeaderView.Fixed)        # Severity
+        a_header.setSectionResizeMode(4, QHeaderView.Fixed)        # Actions
+        self.alerts_table.setColumnWidth(0, 50)
+        self.alerts_table.setColumnWidth(2, 90)
+        self.alerts_table.setColumnWidth(4, 150)
         self.alerts_table.setAlternatingRowColors(True)
         self.alerts_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.alerts_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -147,7 +154,16 @@ class AlertsScreen(QWidget):
         self.rules_table.setHorizontalHeaderLabels([
             "ID", "Name", "Category", "Threshold", "Period", "Active", "Actions"
         ])
-        self.rules_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        r_header = self.rules_table.horizontalHeader()
+        r_header.setSectionResizeMode(QHeaderView.Stretch)
+        r_header.setSectionResizeMode(0, QHeaderView.Fixed)        # ID
+        r_header.setSectionResizeMode(3, QHeaderView.Fixed)        # Threshold
+        r_header.setSectionResizeMode(5, QHeaderView.Fixed)        # Active
+        r_header.setSectionResizeMode(6, QHeaderView.Fixed)        # Actions
+        self.rules_table.setColumnWidth(0, 50)
+        self.rules_table.setColumnWidth(3, 80)
+        self.rules_table.setColumnWidth(5, 70)
+        self.rules_table.setColumnWidth(6, 140)
         self.rules_table.setAlternatingRowColors(True)
         self.rules_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.rules_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -175,7 +191,7 @@ class AlertsScreen(QWidget):
 
             # Severity badge — colored cell
             severity_item = QTableWidgetItem(alert.severity.capitalize())
-            colors = self.SEVERITY_COLORS.get(alert.severity, ("#A7AEC1", "#0B132B"))
+            colors = self.SEVERITY_COLORS.get(alert.severity, ("#BFC5C9", "#1A1D1F"))
             severity_item.setBackground(QColor(colors[0]))
             severity_item.setForeground(QColor(colors[1]))
             self.alerts_table.setItem(row, 2, severity_item)
@@ -185,13 +201,20 @@ class AlertsScreen(QWidget):
             ))
 
             # Acknowledge button
-            ack_btn = QPushButton("\u2714  Acknowledge")
+            ack_widget = QWidget()
+            ack_layout = QHBoxLayout(ack_widget)
+            ack_layout.setContentsMargins(4, 4, 4, 4)
+            ack_layout.setAlignment(Qt.AlignCenter)
+
+            ack_btn = QPushButton("\u2714 Ack")
             ack_btn.setStyleSheet(
-                "background-color: #80A615; color: white; border-radius: 6px; padding: 4px 10px;"
+                "background-color: #52796A; color: #E5E5E5; border: none; border-radius: 4px; padding: 4px 8px; font-weight: bold;"
             )
             ack_btn.setCursor(Qt.PointingHandCursor)
             ack_btn.clicked.connect(lambda _, a=alert: self._acknowledge(a.id))
-            self.alerts_table.setCellWidget(row, 4, ack_btn)
+            
+            ack_layout.addWidget(ack_btn)
+            self.alerts_table.setCellWidget(row, 4, ack_widget)
 
     def _load_rules(self):
         rules = self.alert_mgr.get_all_rules()
@@ -210,34 +233,34 @@ class AlertsScreen(QWidget):
             # Active status badge
             active_item = QTableWidgetItem("Yes" if rule.is_active else "No")
             if rule.is_active:
-                active_item.setBackground(QColor("#22c55e"))
-                active_item.setForeground(QColor("#FFFFFF"))
+                active_item.setBackground(QColor("#4CAF50"))
+                active_item.setForeground(QColor("#E5E5E5"))
             else:
-                active_item.setBackground(QColor("#ef4444"))
-                active_item.setForeground(QColor("#FFFFFF"))
+                active_item.setBackground(QColor("#E57373"))
+                active_item.setForeground(QColor("#1A1D1F"))
             self.rules_table.setItem(row, 5, active_item)
 
             # Actions
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(6)
+            actions_layout.setAlignment(Qt.AlignCenter)
 
-            edit_btn = QPushButton("\u270f  Edit")
-            edit_btn.setFixedSize(65, 28)
+            edit_btn = QPushButton("Edit")
             edit_btn.setCursor(Qt.PointingHandCursor)
             edit_btn.clicked.connect(lambda _, r=rule: self._edit_rule(r))
 
             delete_btn = QPushButton("\U0001f5d1")
-            delete_btn.setFixedSize(28, 28)
             delete_btn.setCursor(Qt.PointingHandCursor)
             delete_btn.setStyleSheet(
-                "background-color: #ef4444; color: white; border-radius: 6px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
             )
             delete_btn.clicked.connect(lambda _, r=rule: self._delete_rule(r.id))
 
             actions_layout.addWidget(edit_btn)
             actions_layout.addWidget(delete_btn)
+            actions_layout.addStretch()
             self.rules_table.setCellWidget(row, 6, actions_widget)
 
     def _acknowledge(self, alert_id):

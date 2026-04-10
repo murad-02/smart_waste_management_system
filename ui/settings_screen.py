@@ -37,7 +37,7 @@ class SettingsScreen(QWidget):
 
         # Header
         header = QLabel("Settings")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
         layout.addWidget(header)
 
         # SMTP Settings Group — card style

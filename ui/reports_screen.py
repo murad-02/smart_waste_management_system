@@ -31,7 +31,7 @@ class ReportsScreen(QWidget):
 
         # Header
         header = QLabel("Reports")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
         layout.addWidget(header)
 
         # Generate report section — card style
@@ -42,7 +42,7 @@ class ReportsScreen(QWidget):
         gen_layout.setSpacing(12)
 
         type_label = QLabel("Report Type:")
-        type_label.setStyleSheet("color: #A7AEC1;")
+        type_label.setStyleSheet("color: #BFC5C9;")
         gen_layout.addWidget(type_label)
         self.type_combo = QComboBox()
         self.type_combo.addItem("Summary", "summary")
@@ -51,7 +51,7 @@ class ReportsScreen(QWidget):
         gen_layout.addWidget(self.type_combo)
 
         from_label = QLabel("From:")
-        from_label.setStyleSheet("color: #A7AEC1;")
+        from_label.setStyleSheet("color: #BFC5C9;")
         gen_layout.addWidget(from_label)
         self.date_from = QDateEdit()
         self.date_from.setDate(QDate.currentDate().addDays(-30))
@@ -59,7 +59,7 @@ class ReportsScreen(QWidget):
         gen_layout.addWidget(self.date_from)
 
         to_label = QLabel("To:")
-        to_label.setStyleSheet("color: #A7AEC1;")
+        to_label.setStyleSheet("color: #BFC5C9;")
         gen_layout.addWidget(to_label)
         self.date_to = QDateEdit()
         self.date_to.setDate(QDate.currentDate())
@@ -76,7 +76,7 @@ class ReportsScreen(QWidget):
 
         # Reports history table
         table_label = QLabel("Generated Reports")
-        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #80A615;")
+        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #52796A;")
         layout.addWidget(table_label)
 
         self.table = QTableWidget()
@@ -84,7 +84,14 @@ class ReportsScreen(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Type", "Date Range", "Generated At", "File", "Actions"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)          # ID
+        header.setSectionResizeMode(1, QHeaderView.Fixed)          # Type
+        header.setSectionResizeMode(5, QHeaderView.Fixed)          # Actions
+        self.table.setColumnWidth(0, 50)
+        self.table.setColumnWidth(1, 100)
+        self.table.setColumnWidth(5, 130)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -112,24 +119,24 @@ class ReportsScreen(QWidget):
             # Actions
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(6)
+            actions_layout.setAlignment(Qt.AlignCenter)
 
-            open_btn = QPushButton("\U0001f4c2  Open")
-            open_btn.setFixedSize(70, 28)
+            open_btn = QPushButton("Open")
             open_btn.setCursor(Qt.PointingHandCursor)
             open_btn.clicked.connect(lambda _, r=report: self._open_report(r.file_path))
 
             delete_btn = QPushButton("\U0001f5d1")
-            delete_btn.setFixedSize(28, 28)
             delete_btn.setCursor(Qt.PointingHandCursor)
             delete_btn.setStyleSheet(
-                "background-color: #ef4444; color: white; border-radius: 6px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
             )
             delete_btn.clicked.connect(lambda _, r=report: self._delete_report(r.id))
 
             actions_layout.addWidget(open_btn)
             actions_layout.addWidget(delete_btn)
+            actions_layout.addStretch()
             self.table.setCellWidget(row, 5, actions_widget)
 
     def _generate_report(self):

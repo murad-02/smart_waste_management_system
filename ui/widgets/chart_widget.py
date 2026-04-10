@@ -8,15 +8,15 @@ from matplotlib.figure import Figure
 class ChartWidget(FigureCanvas):
     """Reusable Matplotlib chart widget with design-system dark theme."""
 
-    BG_COLOR = "#1C2541"
-    TEXT_COLOR = "#FFFFFF"
-    MUTED_COLOR = "#A7AEC1"
-    GRID_COLOR = "#2A3A5C"
+    BG_COLOR = "#222629"
+    TEXT_COLOR = "#E5E5E5"
+    MUTED_COLOR = "#BFC5C9"
+    GRID_COLOR = "#2E3338"
 
-    # Design system: green primary, yellow accent, then supporting colors
+    # Design system: primary accent, then supporting colors
     COLORS = [
-        "#80A615", "#FFC437", "#3b82f6", "#ef4444",
-        "#8b5cf6", "#06b6d4", "#ec4899", "#f97316"
+        "#52796A", "#FFC107", "#64B5F6", "#E57373",
+        "#BAC5AC", "#06b6d4", "#ec4899", "#f97316"
     ]
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -45,7 +45,7 @@ class ChartWidget(FigureCanvas):
         self._style_axes(ax)
 
         # Use accent yellow for bars
-        bars = ax.bar(categories, values, color="#FFC437", width=0.6,
+        bars = ax.bar(categories, values, color="#FFC107", width=0.6,
                       edgecolor="none", alpha=0.9)
         ax.set_title(title, fontsize=12, fontweight="bold")
         ax.set_ylabel("Count", color=self.MUTED_COLOR)
@@ -78,7 +78,7 @@ class ChartWidget(FigureCanvas):
             wedgeprops={"edgecolor": self.BG_COLOR, "linewidth": 2}
         )
         for t in autotexts:
-            t.set_color("#FFFFFF")
+            t.set_color("#E5E5E5")
             t.set_fontsize(8)
             t.set_fontweight("bold")
 
@@ -94,11 +94,11 @@ class ChartWidget(FigureCanvas):
         self._style_axes(ax)
 
         ax.plot(
-            x_data, y_data, color="#80A615",
+            x_data, y_data, color="#52796A",
             marker="o", linewidth=2.5, markersize=4,
-            markerfacecolor="#80A615", markeredgecolor="#80A615"
+            markerfacecolor="#52796A", markeredgecolor="#52796A"
         )
-        ax.fill_between(x_data, y_data, alpha=0.10, color="#80A615")
+        ax.fill_between(x_data, y_data, alpha=0.10, color="#52796A")
         ax.set_title(title, fontsize=12, fontweight="bold")
         if xlabel:
             ax.set_xlabel(xlabel)
