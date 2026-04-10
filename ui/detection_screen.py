@@ -4,14 +4,30 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog,
     QFrame, QScrollArea, QSizePolicy, QMessageBox
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QPixmap, QImage
 
 from config import UPLOAD_DIR
 from core.detection_engine import DetectionEngine
 from core.alert_manager import AlertManager
 from core.log_manager import LogManager
 from ui.widgets.toast import show_toast
+
+
+class DetectionWorker(QThread):
+    """Worker thread that runs YOLO inference off the main/UI thread."""
+
+    finished = pyqtSignal(dict)  # emits the results dict
+
+    def __init__(self, engine, image_path, user_id, parent=None):
+        super().__init__(parent)
+        self.engine = engine
+        self.image_path = image_path
+        self.user_id = user_id
+
+    def run(self):
+        results = self.engine.detect(self.image_path, self.user_id)
+        self.finished.emit(results)
 
 
 class DetectionScreen(QWidget):
@@ -24,6 +40,7 @@ class DetectionScreen(QWidget):
         self.alert_mgr = AlertManager()
         self.log = LogManager()
         self.selected_image_path = None
+        self._worker = None
         self._build_ui()
 
     def _build_ui(self):
@@ -41,7 +58,7 @@ class DetectionScreen(QWidget):
         header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
-        subtitle = QLabel("Upload an image to detect waste categories and bin fill levels")
+        subtitle = QLabel("Upload an image to detect waste bins and estimate fill levels")
         subtitle.setStyleSheet("color: #A7AEC1; font-size: 11pt;")
         layout.addWidget(subtitle)
 
@@ -178,43 +195,79 @@ class DetectionScreen(QWidget):
             self.run_btn.setEnabled(True)
 
     def _run_detection(self):
-        if not self.selected_image_path or not self.current_user:
+        if not self.selected_image_path:
+            show_toast(self, "Please select an image first.", "warning")
+            return
+        if not self.current_user:
+            show_toast(self, "No user logged in.", "error")
             return
 
+        # Disable buttons and show loading state
         self.run_btn.setEnabled(False)
-        self.run_btn.setText("Detecting...")
+        self.select_btn.setEnabled(False)
+        self.run_btn.setText("\u23F3  Detecting...")
+        self.result_image_label.setText("Running detection, please wait...")
+        self.result_frame.show()
+        self.results_frame.hide()
 
-        results = self.engine.detect(self.selected_image_path, self.current_user.id)
+        # Launch detection in a background thread
+        self._worker = DetectionWorker(
+            self.engine, self.selected_image_path, self.current_user.id
+        )
+        self._worker.finished.connect(self._on_detection_finished)
+        self._worker.start()
 
-        if "error" in results and results["error"]:
+    def _on_detection_finished(self, results):
+        """Called on the main thread when the worker finishes."""
+        # Re-enable buttons
+        self.run_btn.setEnabled(True)
+        self.select_btn.setEnabled(True)
+        self.run_btn.setText("\U0001f50d  Run Detection")
+
+        # Handle errors
+        if results.get("error"):
             show_toast(self, f"Detection error: {results['error']}", "error")
-            self.run_btn.setEnabled(True)
-            self.run_btn.setText("\U0001f50d  Run Detection")
+            self.result_frame.hide()
             return
 
-        # Show result image
-        if results["result_image_path"]:
-            pixmap = QPixmap(results["result_image_path"])
-            scaled = pixmap.scaled(400, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.result_image_label.setPixmap(scaled)
-            self.result_frame.show()
+        # Display annotated result image (BGR → RGB → QImage → QPixmap)
+        if results["result_image_path"] and os.path.isfile(results["result_image_path"]):
+            import cv2
+            img_bgr = cv2.imread(results["result_image_path"])
+            if img_bgr is not None:
+                img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+                h, w, ch = img_rgb.shape
+                bytes_per_line = ch * w
+                qimg = QImage(img_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                pixmap = QPixmap.fromImage(qimg)
+                scaled = pixmap.scaled(400, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.result_image_label.setPixmap(scaled)
+                self.result_frame.show()
 
-        # Show results details
+        # Build detection summary
+        detections = results["detections"]
+        if not detections:
+            self.results_content.setText("No bins detected in this image.")
+            self.results_frame.show()
+            show_toast(self, "No bins detected.", "warning")
+            return
+
         details_lines = []
-        for det in results["detections"]:
+        for i, det in enumerate(detections, start=1):
+            bbox = det['bbox']
+            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
             details_lines.append(
-                f"  \u2022 {det['category']}  —  Confidence: {det['confidence']:.0%}"
+                f"  {i}. Bin  —  Confidence: {det['confidence']:.0%}\n"
+                f"      Location: ({x1}, {y1}) → ({x2}, {y2})"
             )
-        fill = results.get("fill_level", "N/A")
-        if fill:
-            fill_display = fill.replace("_", " ").title()
-        else:
-            fill_display = "N/A"
+
+        fill = results.get("fill_level")
+        fill_display = fill.replace("_", " ").title() if fill else "N/A"
 
         text = (
-            f"Detected {len(results['detections'])} item(s):\n\n"
+            f"Detected {len(detections)} bin(s):\n\n"
             + "\n".join(details_lines)
-            + f"\n\nBin Fill Level: {fill_display}"
+            + f"\n\nEstimated Fill Level: {fill_display}"
         )
 
         self.results_content.setText(text)
@@ -223,7 +276,7 @@ class DetectionScreen(QWidget):
         # Log activity
         self.log.log_activity(
             self.current_user.id, "detection",
-            f"Ran detection on image, found {len(results['detections'])} items"
+            f"Ran detection on image, found {len(detections)} bin(s)"
         )
 
         # Check alerts
@@ -237,9 +290,7 @@ class DetectionScreen(QWidget):
                     5000
                 )
 
-        show_toast(self, f"Detection complete! Found {len(results['detections'])} item(s).", "success")
-        self.run_btn.setEnabled(True)
-        self.run_btn.setText("\U0001f50d  Run Detection")
+        show_toast(self, f"Detection complete! Found {len(detections)} bin(s).", "success")
 
     def set_user(self, user):
         self.current_user = user

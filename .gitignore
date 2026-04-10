@@ -41,3 +41,8 @@ Thumbs.db
 
 # Node modules (if any frontend tooling is added)
 node_modules/
+
+# Model files
+*.pt
+*.onnx
+*.yaml

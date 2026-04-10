@@ -12,10 +12,9 @@ STYLES_DIR = os.path.join(BASE_DIR, "assets", "styles")
 for d in [UPLOAD_DIR, RESULTS_DIR, REPORTS_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# Waste categories used throughout the app
+# Detection categories (matching the trained YOLO model classes)
 WASTE_CATEGORIES = [
-    "Plastic", "Metal", "Glass", "Organic",
-    "Paper", "Hazardous", "E-Waste"
+    "bin"
 ]
 
 # Bin fill levels

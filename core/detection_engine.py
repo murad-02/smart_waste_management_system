@@ -1,96 +1,127 @@
 import os
-import random
 import csv
 from datetime import datetime
-from copy import deepcopy
 
-from PIL import Image, ImageDraw, ImageFont
+import cv2
+from ultralytics import YOLO
 
-from config import WASTE_CATEGORIES, BIN_FILL_LEVELS, RESULTS_DIR
+from config import RESULTS_DIR, BASE_DIR
 from database.db_setup import Session
 from database.models import Detection
 
 
-# Colors for drawing bounding boxes per category
-CATEGORY_COLORS = {
-    "Plastic": (0, 184, 148),
-    "Metal": (108, 92, 231),
-    "Glass": (9, 132, 227),
-    "Organic": (0, 206, 201),
-    "Paper": (253, 203, 110),
-    "Hazardous": (214, 48, 49),
-    "E-Waste": (253, 121, 168),
-}
+# Load YOLOv8 model once at module level
+MODEL_PATH = os.path.join(BASE_DIR, "models", "best.pt")
+_model = None
+
+
+def get_model():
+    """Load and cache the YOLO model. Raises FileNotFoundError if missing."""
+    global _model
+    if _model is None:
+        if not os.path.isfile(MODEL_PATH):
+            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+        _model = YOLO(MODEL_PATH)
+    return _model
 
 
 class DetectionEngine:
-    """Mock detection engine. Simulates waste detection with random results.
+    """YOLOv8-based waste/bin detection engine.
 
-    Designed so that only this file needs to change when the real YOLOv8 model
-    is integrated — all method signatures remain the same.
+    Uses the trained model at models/best.pt to detect bins in images.
+    All method signatures remain compatible with the rest of the application.
     """
 
     def detect(self, image_path: str, user_id: int) -> dict:
-        """Run mock detection on an image, save results to DB, return results dict.
+        """Run YOLOv8 detection on an image, save results to DB, return results dict.
 
         Returns:
             dict with keys: detections (list of dicts), fill_level (str),
-                            result_image_path (str), detection_ids (list of int)
+                            result_image_path (str), detection_ids (list of int),
+                            error (str or None)
         """
-        # Open the source image
+        empty_result = {
+            "error": None, "detections": [], "fill_level": None,
+            "result_image_path": None, "detection_ids": []
+        }
+
+        # Validate image path
+        if not os.path.isfile(image_path):
+            empty_result["error"] = f"Image not found: {image_path}"
+            return empty_result
+
+        # Load model
         try:
-            img = Image.open(image_path).convert("RGB")
-        except Exception as e:
-            return {"error": str(e), "detections": [], "fill_level": None,
-                    "result_image_path": None, "detection_ids": []}
+            model = get_model()
+        except FileNotFoundError as e:
+            empty_result["error"] = str(e)
+            return empty_result
 
-        width, height = img.size
-        draw = ImageDraw.Draw(img)
+        # Read image with OpenCV
+        image = cv2.imread(image_path)
+        if image is None:
+            empty_result["error"] = "Failed to read image (unsupported or corrupt file)"
+            return empty_result
 
-        # Simulate 1-4 detections
-        num_detections = random.randint(1, 4)
-        categories = random.sample(WASTE_CATEGORIES, min(num_detections, len(WASTE_CATEGORIES)))
-        fill_level = random.choice(BIN_FILL_LEVELS)
+        # Restrict inference to the bin class if the model defines it
+        bin_class_indices = [idx for idx, name in model.names.items() if str(name).lower() == "bin"]
+        if bin_class_indices:
+            results = model.predict(image, conf=0.3, classes=bin_class_indices)
+        else:
+            results = model.predict(image, conf=0.3)
 
-        detections = []
-        detection_ids = []
-
-        for category in categories:
-            confidence = round(random.uniform(0.65, 0.98), 2)
-
-            # Generate a random bounding box
-            x1 = random.randint(10, max(11, width - 150))
-            y1 = random.randint(10, max(11, height - 150))
-            x2 = min(x1 + random.randint(80, 200), width - 10)
-            y2 = min(y1 + random.randint(80, 200), height - 10)
-            bbox = [x1, y1, x2, y2]
-
-            # Draw bounding box on image
-            color = CATEGORY_COLORS.get(category, (255, 255, 255))
-            draw.rectangle(bbox, outline=color, width=3)
-
-            # Draw label background
-            label = f"{category} {confidence:.0%}"
-            label_bbox = draw.textbbox((x1, y1 - 20), label)
-            draw.rectangle(
-                [label_bbox[0] - 2, label_bbox[1] - 2, label_bbox[2] + 2, label_bbox[3] + 2],
-                fill=color
-            )
-            draw.text((x1, y1 - 20), label, fill=(255, 255, 255))
-
-            detections.append({
-                "category": category,
-                "confidence": confidence,
-                "bbox": bbox
-            })
+        # Get annotated image from YOLO
+        annotated = results[0].plot()
 
         # Save annotated result image
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
         result_filename = f"result_{timestamp}.jpg"
         result_image_path = os.path.join(RESULTS_DIR, result_filename)
-        img.save(result_image_path, quality=90)
+        cv2.imwrite(result_image_path, annotated)
+
+        # Extract detection details from results
+        boxes = results[0].boxes
+        detections = []
+
+        for box in boxes:
+            confidence = float(box.conf[0])
+            cls_id = int(box.cls[0])
+            category = model.names[cls_id]
+            if str(category).lower() != "bin":
+                continue
+            bbox = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
+
+            detections.append({
+                "category": category,
+                "confidence": confidence,
+                "bbox": bbox,
+            })
+
+        # Determine fill level based on detection area ratio within the image
+        fill_level = None
+        if detections:
+            img_h, img_w = image.shape[:2]
+            img_area = img_h * img_w
+            # Use the largest detected bin to estimate fill level
+            max_area_ratio = 0.0
+            for det in detections:
+                x1, y1, x2, y2 = det["bbox"]
+                det_area = (x2 - x1) * (y2 - y1)
+                ratio = det_area / img_area if img_area > 0 else 0
+                if ratio > max_area_ratio:
+                    max_area_ratio = ratio
+
+            if max_area_ratio < 0.05:
+                fill_level = "empty"
+            elif max_area_ratio < 0.15:
+                fill_level = "half"
+            elif max_area_ratio < 0.30:
+                fill_level = "almost_full"
+            else:
+                fill_level = "full"
 
         # Save each detection to the database
+        detection_ids = []
         session = Session()
         try:
             for det in detections:
@@ -116,10 +147,11 @@ class DetectionEngine:
             session.close()
 
         return {
+            "error": None,
             "detections": detections,
             "fill_level": fill_level,
             "result_image_path": result_image_path,
-            "detection_ids": detection_ids
+            "detection_ids": detection_ids,
         }
 
     def get_detection_by_id(self, detection_id: int):
