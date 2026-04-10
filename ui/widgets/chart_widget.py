@@ -6,43 +6,58 @@ from matplotlib.figure import Figure
 
 
 class ChartWidget(FigureCanvas):
-    """Reusable Matplotlib chart widget embedded in PyQt5."""
+    """Reusable Matplotlib chart widget with design-system dark theme."""
 
+    BG_COLOR = "#1C2541"
+    TEXT_COLOR = "#FFFFFF"
+    MUTED_COLOR = "#A7AEC1"
+    GRID_COLOR = "#2A3A5C"
+
+    # Design system: green primary, yellow accent, then supporting colors
     COLORS = [
-        "#00b894", "#0984e3", "#fdcb6e", "#d63031",
-        "#6c5ce7", "#00cec9", "#fd79a8", "#e17055"
+        "#80A615", "#FFC437", "#3b82f6", "#ef4444",
+        "#8b5cf6", "#06b6d4", "#ec4899", "#f97316"
     ]
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.fig.set_facecolor("#1a1a35")
+        self.fig.set_facecolor(self.BG_COLOR)
         super().__init__(self.fig)
         self.setParent(parent)
 
     def _style_axes(self, ax):
-        """Apply dark theme styling to axes."""
-        ax.set_facecolor("#1a1a35")
-        ax.tick_params(colors="#8888aa", labelsize=8)
+        """Apply design-system dark theme styling to axes."""
+        ax.set_facecolor(self.BG_COLOR)
+        ax.tick_params(colors=self.MUTED_COLOR, labelsize=8)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        ax.spines["bottom"].set_color("#3a3a5a")
-        ax.spines["left"].set_color("#3a3a5a")
-        ax.xaxis.label.set_color("#8888aa")
-        ax.yaxis.label.set_color("#8888aa")
-        ax.title.set_color("#e0e0e0")
+        ax.spines["bottom"].set_color(self.GRID_COLOR)
+        ax.spines["left"].set_color(self.GRID_COLOR)
+        ax.xaxis.label.set_color(self.MUTED_COLOR)
+        ax.yaxis.label.set_color(self.MUTED_COLOR)
+        ax.title.set_color(self.TEXT_COLOR)
+        ax.grid(True, axis="y", color=self.GRID_COLOR, linewidth=0.5, alpha=0.5)
 
     def plot_bar(self, categories: list, values: list, title: str = ""):
-        """Draw a bar chart."""
+        """Draw a bar chart with accent yellow bars."""
         self.fig.clear()
         ax = self.fig.add_subplot(111)
         self._style_axes(ax)
 
-        colors = self.COLORS[:len(categories)]
-        ax.bar(categories, values, color=colors, width=0.6)
+        # Use accent yellow for bars
+        bars = ax.bar(categories, values, color="#FFC437", width=0.6,
+                      edgecolor="none", alpha=0.9)
         ax.set_title(title, fontsize=12, fontweight="bold")
-        ax.set_ylabel("Count")
+        ax.set_ylabel("Count", color=self.MUTED_COLOR)
 
-        # Rotate labels if needed
+        # Value labels on bars
+        for bar, val in zip(bars, values):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
+                str(val), ha="center", va="bottom",
+                color=self.TEXT_COLOR, fontsize=8, fontweight="bold"
+            )
+
         if len(categories) > 4:
             ax.tick_params(axis="x", rotation=45)
 
@@ -50,38 +65,50 @@ class ChartWidget(FigureCanvas):
         self.draw()
 
     def plot_pie(self, labels: list, values: list, title: str = ""):
-        """Draw a pie chart."""
+        """Draw a pie chart with design-system colors."""
         self.fig.clear()
         ax = self.fig.add_subplot(111)
-        ax.set_facecolor("#1a1a35")
+        ax.set_facecolor(self.BG_COLOR)
 
         colors = self.COLORS[:len(labels)]
         wedges, texts, autotexts = ax.pie(
             values, labels=labels, autopct="%1.1f%%", colors=colors,
-            textprops={"color": "#e0e0e0", "fontsize": 9},
-            pctdistance=0.85, startangle=90
+            textprops={"color": self.TEXT_COLOR, "fontsize": 9},
+            pctdistance=0.82, startangle=90,
+            wedgeprops={"edgecolor": self.BG_COLOR, "linewidth": 2}
         )
         for t in autotexts:
-            t.set_color("#ffffff")
+            t.set_color("#FFFFFF")
             t.set_fontsize(8)
+            t.set_fontweight("bold")
 
-        ax.set_title(title, fontsize=12, fontweight="bold", color="#e0e0e0")
+        ax.set_title(title, fontsize=12, fontweight="bold", color=self.TEXT_COLOR)
         self.fig.tight_layout()
         self.draw()
 
-    def plot_line(self, x_data: list, y_data: list, title: str = "", xlabel: str = "", ylabel: str = ""):
-        """Draw a line chart."""
+    def plot_line(self, x_data: list, y_data: list, title: str = "",
+                  xlabel: str = "", ylabel: str = ""):
+        """Draw a smooth line chart with primary green."""
         self.fig.clear()
         ax = self.fig.add_subplot(111)
         self._style_axes(ax)
 
-        ax.plot(x_data, y_data, color="#00b894", marker="o", linewidth=2, markersize=4)
-        ax.fill_between(x_data, y_data, alpha=0.1, color="#00b894")
+        ax.plot(
+            x_data, y_data, color="#80A615",
+            marker="o", linewidth=2.5, markersize=4,
+            markerfacecolor="#80A615", markeredgecolor="#80A615"
+        )
+        ax.fill_between(x_data, y_data, alpha=0.10, color="#80A615")
         ax.set_title(title, fontsize=12, fontweight="bold")
         if xlabel:
             ax.set_xlabel(xlabel)
         if ylabel:
             ax.set_ylabel(ylabel)
+
+        if len(x_data) > 10:
+            n = max(1, len(x_data) // 8)
+            ax.set_xticks(range(0, len(x_data), n))
+            ax.set_xticklabels([x_data[i] for i in range(0, len(x_data), n)])
 
         if len(x_data) > 5:
             ax.tick_params(axis="x", rotation=45)

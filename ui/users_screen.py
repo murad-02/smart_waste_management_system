@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QComboBox, QDialogButtonBox, QMessageBox
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 
 from config import USER_ROLES
 from core.auth_manager import AuthManager
@@ -18,7 +19,7 @@ class UserDialog(QDialog):
         super().__init__(parent)
         self.user = user
         self.setWindowTitle("Edit User" if user else "Create User")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(420)
         self._build_ui()
 
     def _build_ui(self):
@@ -61,7 +62,7 @@ class UserDialog(QDialog):
 
         if self.user:
             note = QLabel("Leave password blank to keep current password")
-            note.setStyleSheet("color: #8888aa; font-size: 9pt;")
+            note.setStyleSheet("color: #A7AEC1; font-size: 9pt;")
             layout.addRow("", note)
 
         btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -80,7 +81,13 @@ class UserDialog(QDialog):
 
 
 class UsersScreen(QWidget):
-    """Admin screen for managing users."""
+    """Admin screen for managing users with role badges."""
+
+    ROLE_BADGE_COLORS = {
+        "admin": ("#22c55e", "#FFFFFF"),
+        "supervisor": ("#3b82f6", "#FFFFFF"),
+        "operator": ("#A7AEC1", "#0B132B"),
+    }
 
     def __init__(self, current_user=None, parent=None):
         super().__init__(parent)
@@ -97,11 +104,11 @@ class UsersScreen(QWidget):
         # Header
         header_layout = QHBoxLayout()
         header = QLabel("User Management")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         header_layout.addWidget(header)
         header_layout.addStretch()
 
-        self.add_btn = QPushButton("+ Add User")
+        self.add_btn = QPushButton("\u2795  Add User")
         self.add_btn.setProperty("class", "accent")
         self.add_btn.setCursor(Qt.PointingHandCursor)
         self.add_btn.clicked.connect(self._add_user)
@@ -134,36 +141,49 @@ class UsersScreen(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(user.username))
             self.table.setItem(row, 2, QTableWidgetItem(user.full_name))
             self.table.setItem(row, 3, QTableWidgetItem(user.email or ""))
-            self.table.setItem(row, 4, QTableWidgetItem(user.role.capitalize()))
 
+            # Role badge — colored cell
+            role_item = QTableWidgetItem(user.role.capitalize())
+            role_colors = self.ROLE_BADGE_COLORS.get(user.role, ("#A7AEC1", "#0B132B"))
+            role_item.setBackground(QColor(role_colors[0]))
+            role_item.setForeground(QColor(role_colors[1]))
+            self.table.setItem(row, 4, role_item)
+
+            # Status badge — colored cell
             status_text = "Active" if user.is_active else "Inactive"
             status_item = QTableWidgetItem(status_text)
             if user.is_active:
-                status_item.setForeground(Qt.green)
+                status_item.setBackground(QColor("#22c55e"))
+                status_item.setForeground(QColor("#FFFFFF"))
             else:
-                status_item.setForeground(Qt.red)
+                status_item.setBackground(QColor("#ef4444"))
+                status_item.setForeground(QColor("#FFFFFF"))
             self.table.setItem(row, 5, status_item)
 
             # Actions
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
             actions_layout.setContentsMargins(4, 2, 4, 2)
-            actions_layout.setSpacing(4)
+            actions_layout.setSpacing(6)
 
-            edit_btn = QPushButton("Edit")
-            edit_btn.setFixedSize(55, 28)
+            edit_btn = QPushButton("\u270f  Edit")
+            edit_btn.setFixedSize(65, 28)
             edit_btn.setCursor(Qt.PointingHandCursor)
             edit_btn.clicked.connect(lambda _, u=user: self._edit_user(u))
 
             if user.is_active:
                 toggle_btn = QPushButton("Deactivate")
-                toggle_btn.setFixedSize(80, 28)
-                toggle_btn.setStyleSheet("background-color: #d63031; color: white; border-radius: 4px;")
+                toggle_btn.setFixedSize(85, 28)
+                toggle_btn.setStyleSheet(
+                    "background-color: #ef4444; color: white; border-radius: 6px;"
+                )
                 toggle_btn.clicked.connect(lambda _, u=user: self._deactivate_user(u.id))
             else:
                 toggle_btn = QPushButton("Activate")
-                toggle_btn.setFixedSize(70, 28)
-                toggle_btn.setStyleSheet("background-color: #00b894; color: white; border-radius: 4px;")
+                toggle_btn.setFixedSize(75, 28)
+                toggle_btn.setStyleSheet(
+                    "background-color: #22c55e; color: white; border-radius: 6px;"
+                )
                 toggle_btn.clicked.connect(lambda _, u=user: self._activate_user(u.id))
 
             toggle_btn.setCursor(Qt.PointingHandCursor)

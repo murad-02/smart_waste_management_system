@@ -37,13 +37,13 @@ class SettingsScreen(QWidget):
 
         # Header
         header = QLabel("Settings")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
-        # SMTP Settings Group
-        smtp_group = QGroupBox("Email / SMTP Configuration")
+        # SMTP Settings Group — card style
+        smtp_group = QGroupBox("  \u2709  Email / SMTP Configuration")
         smtp_layout = QFormLayout()
-        smtp_layout.setSpacing(10)
+        smtp_layout.setSpacing(12)
 
         self.smtp_server = QLineEdit()
         self.smtp_server.setPlaceholderText("e.g., smtp.gmail.com")
@@ -69,6 +69,7 @@ class SettingsScreen(QWidget):
         self.save_smtp_btn.clicked.connect(self._save_smtp)
 
         self.test_smtp_btn = QPushButton("Test Connection")
+        self.test_smtp_btn.setProperty("class", "outline")
         self.test_smtp_btn.setCursor(Qt.PointingHandCursor)
         self.test_smtp_btn.clicked.connect(self._test_smtp)
 
@@ -80,10 +81,10 @@ class SettingsScreen(QWidget):
         smtp_group.setLayout(smtp_layout)
         layout.addWidget(smtp_group)
 
-        # App Settings Group
-        app_group = QGroupBox("Application Settings")
+        # App Settings Group — card style
+        app_group = QGroupBox("  \u2699  Application Settings")
         app_layout = QFormLayout()
-        app_layout.setSpacing(10)
+        app_layout.setSpacing(12)
 
         self.company_name = QLineEdit()
         self.company_name.setPlaceholderText("Company / Organization name")
@@ -101,10 +102,10 @@ class SettingsScreen(QWidget):
         app_group.setLayout(app_layout)
         layout.addWidget(app_group)
 
-        # Change Password Group
-        pwd_group = QGroupBox("Change My Password")
+        # Change Password Group — card style
+        pwd_group = QGroupBox("  \U0001f512  Change My Password")
         pwd_layout = QFormLayout()
-        pwd_layout.setSpacing(10)
+        pwd_layout.setSpacing(12)
 
         self.current_pwd = QLineEdit()
         self.current_pwd.setEchoMode(QLineEdit.Password)

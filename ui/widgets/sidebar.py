@@ -6,19 +6,19 @@ from PyQt5.QtCore import pyqtSignal, Qt
 
 
 class Sidebar(QWidget):
-    """Navigation sidebar with role-based menu items."""
+    """Navigation sidebar with role-based menu items and icon system."""
 
     page_changed = pyqtSignal(str)
 
     # Menu items: (page_key, display_text, icon_char, required_role)
     MENU_ITEMS = [
-        ("dashboard", "Dashboard", "\u2302", "operator"),
-        ("detection", "Detection", "\U0001f50d", "operator"),
-        ("history", "Waste History", "\U0001f4c4", "operator"),
-        ("users", "Users", "\U0001f465", "admin"),
-        ("alerts", "Alerts", "\u26a0", "supervisor"),
-        ("reports", "Reports", "\U0001f4ca", "operator"),
-        ("settings", "Settings", "\u2699", "admin"),
+        ("dashboard", "Dashboard", "\U0001f4ca", "operator"),      # 📊
+        ("detection", "Detection", "\U0001f4f7", "operator"),      # 📷
+        ("history", "Waste History", "\U0001f4cb", "operator"),    # 📋
+        ("users", "Users", "\U0001f464", "admin"),                 # 👤
+        ("alerts", "Alerts", "\u26a0\ufe0f", "supervisor"),        # ⚠️
+        ("reports", "Reports", "\U0001f4c8", "operator"),          # 📈
+        ("settings", "Settings", "\u2699\ufe0f", "admin"),         # ⚙️
     ]
 
     ROLE_HIERARCHY = {"admin": 3, "supervisor": 2, "operator": 1}
@@ -26,7 +26,7 @@ class Sidebar(QWidget):
     def __init__(self, user_role: str = "operator", parent=None):
         super().__init__(parent)
         self.setObjectName("sidebar")
-        self.setFixedWidth(220)
+        self.setFixedWidth(230)
         self.user_role = user_role
         self.current_page = "dashboard"
         self.buttons = {}
@@ -39,19 +39,27 @@ class Sidebar(QWidget):
         layout.setSpacing(0)
 
         # App logo / title
-        header = QLabel("  \U0001f5d1 SWMS")
+        header = QLabel("  \u267b  SWMS")
         header.setStyleSheet(
-            "color: #00b894; font-size: 18pt; font-weight: bold; "
-            "padding: 20px 16px 16px 16px;"
+            "color: #80A615; font-size: 18pt; font-weight: bold; "
+            "padding: 24px 16px 4px 16px;"
         )
         layout.addWidget(header)
 
         # Version
         version_label = QLabel("  v1.0.0")
-        version_label.setStyleSheet("color: #555577; font-size: 9pt; padding-left: 16px;")
+        version_label.setStyleSheet(
+            "color: #5A6A8A; font-size: 9pt; padding-left: 16px; padding-bottom: 10px;"
+        )
         layout.addWidget(version_label)
 
-        layout.addSpacing(16)
+        # Separator
+        sep = QLabel()
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background-color: #1C2541; margin: 0 14px;")
+        layout.addWidget(sep)
+
+        layout.addSpacing(14)
 
         # Navigation buttons
         user_level = self.ROLE_HIERARCHY.get(self.user_role, 1)
@@ -73,7 +81,7 @@ class Sidebar(QWidget):
         # User info / logout at bottom
         self.user_label = QLabel("")
         self.user_label.setStyleSheet(
-            "color: #8888aa; font-size: 9pt; padding: 8px 16px;"
+            "color: #A7AEC1; font-size: 9pt; padding: 8px 16px;"
         )
         self.user_label.setWordWrap(True)
         layout.addWidget(self.user_label)
@@ -82,8 +90,8 @@ class Sidebar(QWidget):
         self.logout_btn.setProperty("class", "sidebar-btn")
         self.logout_btn.setCursor(Qt.PointingHandCursor)
         self.logout_btn.setStyleSheet(
-            "color: #d63031; text-align: left; padding: 12px 16px; "
-            "margin: 2px 8px 16px 8px;"
+            "color: #ef4444; text-align: left; padding: 12px 16px; "
+            "margin: 2px 10px 18px 10px;"
         )
         layout.addWidget(self.logout_btn)
 

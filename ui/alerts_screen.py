@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QMessageBox
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 
 from config import WASTE_CATEGORIES
 from core.alert_manager import AlertManager
@@ -19,7 +20,7 @@ class AlertRuleDialog(QDialog):
         super().__init__(parent)
         self.rule = rule
         self.setWindowTitle("Edit Rule" if rule else "Create Alert Rule")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(420)
         self._build_ui()
 
     def _build_ui(self):
@@ -82,6 +83,12 @@ class AlertRuleDialog(QDialog):
 class AlertsScreen(QWidget):
     """Screen with tabs for alert rules and triggered alerts."""
 
+    SEVERITY_COLORS = {
+        "critical": ("#ef4444", "#FFFFFF"),
+        "warning": ("#FFC437", "#0B132B"),
+        "info": ("#3b82f6", "#FFFFFF"),
+    }
+
     def __init__(self, current_user=None, parent=None):
         super().__init__(parent)
         self.current_user = current_user
@@ -96,7 +103,7 @@ class AlertsScreen(QWidget):
 
         # Header
         header = QLabel("Alerts & Rules")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
         # Tabs
@@ -119,7 +126,7 @@ class AlertsScreen(QWidget):
         self.alerts_table.verticalHeader().setVisible(False)
         alerts_layout.addWidget(self.alerts_table)
 
-        self.tabs.addTab(alerts_widget, "Triggered Alerts")
+        self.tabs.addTab(alerts_widget, "\u26a0  Triggered Alerts")
 
         # --- Alert Rules Tab ---
         rules_widget = QWidget()
@@ -128,7 +135,7 @@ class AlertsScreen(QWidget):
 
         rules_header = QHBoxLayout()
         rules_header.addStretch()
-        self.add_rule_btn = QPushButton("+ Add Rule")
+        self.add_rule_btn = QPushButton("\u2795  Add Rule")
         self.add_rule_btn.setProperty("class", "accent")
         self.add_rule_btn.setCursor(Qt.PointingHandCursor)
         self.add_rule_btn.clicked.connect(self._add_rule)
@@ -147,7 +154,7 @@ class AlertsScreen(QWidget):
         self.rules_table.verticalHeader().setVisible(False)
         rules_layout.addWidget(self.rules_table)
 
-        self.tabs.addTab(rules_widget, "Alert Rules")
+        self.tabs.addTab(rules_widget, "\U0001f4cb  Alert Rules")
 
         layout.addWidget(self.tabs)
 
@@ -166,13 +173,11 @@ class AlertsScreen(QWidget):
             self.alerts_table.setItem(row, 0, QTableWidgetItem(str(alert.id)))
             self.alerts_table.setItem(row, 1, QTableWidgetItem(alert.message))
 
+            # Severity badge — colored cell
             severity_item = QTableWidgetItem(alert.severity.capitalize())
-            if alert.severity == "critical":
-                severity_item.setForeground(Qt.red)
-            elif alert.severity == "warning":
-                severity_item.setForeground(Qt.yellow)
-            else:
-                severity_item.setForeground(Qt.cyan)
+            colors = self.SEVERITY_COLORS.get(alert.severity, ("#A7AEC1", "#0B132B"))
+            severity_item.setBackground(QColor(colors[0]))
+            severity_item.setForeground(QColor(colors[1]))
             self.alerts_table.setItem(row, 2, severity_item)
 
             self.alerts_table.setItem(row, 3, QTableWidgetItem(
@@ -180,8 +185,10 @@ class AlertsScreen(QWidget):
             ))
 
             # Acknowledge button
-            ack_btn = QPushButton("Acknowledge")
-            ack_btn.setStyleSheet("background-color: #00b894; color: white; border-radius: 4px;")
+            ack_btn = QPushButton("\u2714  Acknowledge")
+            ack_btn.setStyleSheet(
+                "background-color: #80A615; color: white; border-radius: 6px; padding: 4px 10px;"
+            )
             ack_btn.setCursor(Qt.PointingHandCursor)
             ack_btn.clicked.connect(lambda _, a=alert: self._acknowledge(a.id))
             self.alerts_table.setCellWidget(row, 4, ack_btn)
@@ -200,25 +207,33 @@ class AlertsScreen(QWidget):
             self.rules_table.setItem(row, 3, QTableWidgetItem(str(rule.threshold_value)))
             self.rules_table.setItem(row, 4, QTableWidgetItem(rule.period.capitalize()))
 
+            # Active status badge
             active_item = QTableWidgetItem("Yes" if rule.is_active else "No")
-            active_item.setForeground(Qt.green if rule.is_active else Qt.red)
+            if rule.is_active:
+                active_item.setBackground(QColor("#22c55e"))
+                active_item.setForeground(QColor("#FFFFFF"))
+            else:
+                active_item.setBackground(QColor("#ef4444"))
+                active_item.setForeground(QColor("#FFFFFF"))
             self.rules_table.setItem(row, 5, active_item)
 
             # Actions
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
             actions_layout.setContentsMargins(4, 2, 4, 2)
-            actions_layout.setSpacing(4)
+            actions_layout.setSpacing(6)
 
-            edit_btn = QPushButton("Edit")
-            edit_btn.setFixedSize(50, 28)
+            edit_btn = QPushButton("\u270f  Edit")
+            edit_btn.setFixedSize(65, 28)
             edit_btn.setCursor(Qt.PointingHandCursor)
             edit_btn.clicked.connect(lambda _, r=rule: self._edit_rule(r))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setFixedSize(28, 28)
             delete_btn.setCursor(Qt.PointingHandCursor)
-            delete_btn.setStyleSheet("background-color: #d63031; color: white; border-radius: 4px;")
+            delete_btn.setStyleSheet(
+                "background-color: #ef4444; color: white; border-radius: 6px;"
+            )
             delete_btn.clicked.connect(lambda _, r=rule: self._delete_rule(r.id))
 
             actions_layout.addWidget(edit_btn)

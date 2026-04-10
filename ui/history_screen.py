@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox
 )
 from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QColor
 
 from config import WASTE_CATEGORIES
 from core.detection_engine import DetectionEngine
@@ -62,6 +62,12 @@ class DetectionDetailDialog(QDialog):
 class HistoryScreen(QWidget):
     """Waste detection history with filtering, export, and detail view."""
 
+    STATUS_COLORS = {
+        "pending": ("#FFC437", "#0B132B"),
+        "verified": ("#22c55e", "#FFFFFF"),
+        "rejected": ("#ef4444", "#FFFFFF"),
+    }
+
     def __init__(self, current_user=None, parent=None):
         super().__init__(parent)
         self.current_user = current_user
@@ -76,20 +82,20 @@ class HistoryScreen(QWidget):
 
         # Header
         header = QLabel("Waste History")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
-        # Filters row
+        # Filters row — styled card
         filter_frame = QFrame()
-        filter_frame.setStyleSheet(
-            "background-color: #22223a; border: 1px solid #3a3a5a; border-radius: 8px;"
-        )
+        filter_frame.setProperty("class", "filter-bar")
         filter_layout = QHBoxLayout(filter_frame)
-        filter_layout.setContentsMargins(16, 12, 16, 12)
+        filter_layout.setContentsMargins(18, 14, 18, 14)
         filter_layout.setSpacing(12)
 
         # Category filter
-        filter_layout.addWidget(QLabel("Category:"))
+        cat_label = QLabel("Category:")
+        cat_label.setStyleSheet("color: #A7AEC1;")
+        filter_layout.addWidget(cat_label)
         self.category_combo = QComboBox()
         self.category_combo.addItem("All Categories", "")
         for cat in WASTE_CATEGORIES:
@@ -97,7 +103,9 @@ class HistoryScreen(QWidget):
         filter_layout.addWidget(self.category_combo)
 
         # Status filter
-        filter_layout.addWidget(QLabel("Status:"))
+        status_label = QLabel("Status:")
+        status_label.setStyleSheet("color: #A7AEC1;")
+        filter_layout.addWidget(status_label)
         self.status_combo = QComboBox()
         self.status_combo.addItem("All Statuses", "")
         for status in ["pending", "verified", "rejected"]:
@@ -105,20 +113,24 @@ class HistoryScreen(QWidget):
         filter_layout.addWidget(self.status_combo)
 
         # Date range
-        filter_layout.addWidget(QLabel("From:"))
+        from_label = QLabel("From:")
+        from_label.setStyleSheet("color: #A7AEC1;")
+        filter_layout.addWidget(from_label)
         self.date_from = QDateEdit()
         self.date_from.setDate(QDate.currentDate().addDays(-30))
         self.date_from.setCalendarPopup(True)
         filter_layout.addWidget(self.date_from)
 
-        filter_layout.addWidget(QLabel("To:"))
+        to_label = QLabel("To:")
+        to_label.setStyleSheet("color: #A7AEC1;")
+        filter_layout.addWidget(to_label)
         self.date_to = QDateEdit()
         self.date_to.setDate(QDate.currentDate())
         self.date_to.setCalendarPopup(True)
         filter_layout.addWidget(self.date_to)
 
         # Apply filter button
-        self.apply_btn = QPushButton("Apply")
+        self.apply_btn = QPushButton("\U0001f50d  Apply")
         self.apply_btn.setProperty("class", "accent")
         self.apply_btn.setCursor(Qt.PointingHandCursor)
         self.apply_btn.clicked.connect(self.refresh_data)
@@ -129,11 +141,11 @@ class HistoryScreen(QWidget):
         # Action buttons row
         actions_layout = QHBoxLayout()
 
-        self.export_csv_btn = QPushButton("Export CSV")
+        self.export_csv_btn = QPushButton("\U0001f4e5  Export CSV")
         self.export_csv_btn.setCursor(Qt.PointingHandCursor)
         self.export_csv_btn.clicked.connect(self._export_csv)
 
-        self.export_excel_btn = QPushButton("Export Excel")
+        self.export_excel_btn = QPushButton("\U0001f4e5  Export Excel")
         self.export_excel_btn.setCursor(Qt.PointingHandCursor)
         self.export_excel_btn.clicked.connect(self._export_excel)
 
@@ -192,7 +204,15 @@ class HistoryScreen(QWidget):
             self.table.setItem(row, 3, QTableWidgetItem(f"{det.confidence:.0%}"))
             fill = (det.bin_fill_level or "N/A").replace("_", " ").title()
             self.table.setItem(row, 4, QTableWidgetItem(fill))
-            self.table.setItem(row, 5, QTableWidgetItem(det.status.capitalize()))
+
+            # Status badge via colored cell
+            status_text = det.status.capitalize()
+            status_item = QTableWidgetItem(status_text)
+            colors = self.STATUS_COLORS.get(det.status, ("#A7AEC1", "#0B132B"))
+            status_item.setForeground(QColor(colors[1]))
+            status_item.setBackground(QColor(colors[0]))
+            self.table.setItem(row, 5, status_item)
+
             self.table.setItem(row, 6, QTableWidgetItem(det.notes or ""))
 
             # Action buttons
@@ -201,8 +221,8 @@ class HistoryScreen(QWidget):
             actions_layout.setContentsMargins(4, 2, 4, 2)
             actions_layout.setSpacing(4)
 
-            view_btn = QPushButton("View")
-            view_btn.setFixedSize(55, 28)
+            view_btn = QPushButton("\U0001f441  View")
+            view_btn.setFixedSize(65, 28)
             view_btn.setCursor(Qt.PointingHandCursor)
             view_btn.clicked.connect(lambda _, d=det: self._view_detail(d))
 
@@ -210,20 +230,27 @@ class HistoryScreen(QWidget):
             verify_btn.setFixedSize(28, 28)
             verify_btn.setToolTip("Verify")
             verify_btn.setCursor(Qt.PointingHandCursor)
-            verify_btn.setStyleSheet("background-color: #00b894; color: white; border-radius: 4px;")
+            verify_btn.setStyleSheet(
+                "background-color: #22c55e; color: white; border-radius: 6px;"
+            )
             verify_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "verified"))
 
             reject_btn = QPushButton("\u2718")
             reject_btn.setFixedSize(28, 28)
             reject_btn.setToolTip("Reject")
             reject_btn.setCursor(Qt.PointingHandCursor)
-            reject_btn.setStyleSheet("background-color: #d63031; color: white; border-radius: 4px;")
+            reject_btn.setStyleSheet(
+                "background-color: #ef4444; color: white; border-radius: 6px;"
+            )
             reject_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "rejected"))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setFixedSize(28, 28)
             delete_btn.setToolTip("Delete")
             delete_btn.setCursor(Qt.PointingHandCursor)
+            delete_btn.setStyleSheet(
+                "background-color: #ef4444; color: white; border-radius: 6px;"
+            )
             delete_btn.clicked.connect(lambda _, d=det: self._delete_detection(d.id))
 
             actions_layout.addWidget(view_btn)

@@ -38,17 +38,17 @@ class DetectionScreen(QWidget):
 
         # Header
         header = QLabel("Waste Detection")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
         subtitle = QLabel("Upload an image to detect waste categories and bin fill levels")
-        subtitle.setStyleSheet("color: #8888aa; font-size: 11pt;")
+        subtitle.setStyleSheet("color: #A7AEC1; font-size: 11pt;")
         layout.addWidget(subtitle)
 
-        # Upload section
+        # Upload section — card style
         upload_frame = QFrame()
         upload_frame.setStyleSheet(
-            "background-color: #22223a; border: 2px dashed #3a3a5a; border-radius: 12px;"
+            "background-color: #1C2541; border: 2px dashed #2A3A5C; border-radius: 12px;"
         )
         upload_layout = QVBoxLayout(upload_frame)
         upload_layout.setContentsMargins(24, 24, 24, 24)
@@ -59,12 +59,12 @@ class DetectionScreen(QWidget):
         upload_icon.setAlignment(Qt.AlignCenter)
 
         upload_text = QLabel("Click below to select an image")
-        upload_text.setStyleSheet("color: #8888aa; font-size: 11pt;")
+        upload_text.setStyleSheet("color: #A7AEC1; font-size: 11pt;")
         upload_text.setAlignment(Qt.AlignCenter)
 
-        self.select_btn = QPushButton("Select Image")
+        self.select_btn = QPushButton("\U0001f4c2  Select Image")
         self.select_btn.setProperty("class", "accent")
-        self.select_btn.setMinimumHeight(40)
+        self.select_btn.setMinimumHeight(42)
         self.select_btn.setMaximumWidth(200)
         self.select_btn.setCursor(Qt.PointingHandCursor)
         self.select_btn.clicked.connect(self._select_image)
@@ -80,40 +80,40 @@ class DetectionScreen(QWidget):
         preview_results = QHBoxLayout()
         preview_results.setSpacing(16)
 
-        # Source image preview
+        # Source image preview — card
         self.source_frame = QFrame()
         self.source_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
+            "background-color: #1C2541; border: 1px solid #2A3A5C; border-radius: 12px;"
         )
         source_layout = QVBoxLayout(self.source_frame)
-        source_layout.setContentsMargins(12, 12, 12, 12)
+        source_layout.setContentsMargins(14, 14, 14, 14)
 
         source_title = QLabel("Source Image")
-        source_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #e0e0e0;")
+        source_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
 
         self.source_image_label = QLabel("No image selected")
         self.source_image_label.setAlignment(Qt.AlignCenter)
-        self.source_image_label.setStyleSheet("color: #555577; min-height: 200px;")
+        self.source_image_label.setStyleSheet("color: #5A6A8A; min-height: 200px;")
         self.source_image_label.setMinimumSize(300, 250)
 
         source_layout.addWidget(source_title)
         source_layout.addWidget(self.source_image_label)
         self.source_frame.hide()
 
-        # Result image preview
+        # Result image preview — card
         self.result_frame = QFrame()
         self.result_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
+            "background-color: #1C2541; border: 1px solid #2A3A5C; border-radius: 12px;"
         )
         result_layout = QVBoxLayout(self.result_frame)
-        result_layout.setContentsMargins(12, 12, 12, 12)
+        result_layout.setContentsMargins(14, 14, 14, 14)
 
         result_title = QLabel("Detection Result")
-        result_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #e0e0e0;")
+        result_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
 
         self.result_image_label = QLabel("Run detection to see results")
         self.result_image_label.setAlignment(Qt.AlignCenter)
-        self.result_image_label.setStyleSheet("color: #555577; min-height: 200px;")
+        self.result_image_label.setStyleSheet("color: #5A6A8A; min-height: 200px;")
         self.result_image_label.setMinimumSize(300, 250)
 
         result_layout.addWidget(result_title)
@@ -134,19 +134,19 @@ class DetectionScreen(QWidget):
         self.run_btn.setEnabled(False)
         layout.addWidget(self.run_btn, alignment=Qt.AlignCenter)
 
-        # Results details
+        # Results details — card
         self.results_frame = QFrame()
         self.results_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
+            "background-color: #1C2541; border: 1px solid #2A3A5C; border-radius: 12px;"
         )
         results_detail_layout = QVBoxLayout(self.results_frame)
-        results_detail_layout.setContentsMargins(16, 16, 16, 16)
+        results_detail_layout.setContentsMargins(18, 18, 18, 18)
 
         self.results_title = QLabel("Detection Results")
-        self.results_title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #00b894;")
+        self.results_title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #80A615;")
 
         self.results_content = QLabel("")
-        self.results_content.setStyleSheet("color: #e0e0e0; font-size: 11pt;")
+        self.results_content.setStyleSheet("color: #FFFFFF; font-size: 11pt;")
         self.results_content.setWordWrap(True)
 
         results_detail_layout.addWidget(self.results_title)

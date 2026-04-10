@@ -31,38 +31,42 @@ class ReportsScreen(QWidget):
 
         # Header
         header = QLabel("Reports")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
-        # Generate report section
+        # Generate report section — card style
         gen_frame = QFrame()
-        gen_frame.setStyleSheet(
-            "background-color: #22223a; border: 1px solid #3a3a5a; border-radius: 12px;"
-        )
+        gen_frame.setProperty("class", "filter-bar")
         gen_layout = QHBoxLayout(gen_frame)
-        gen_layout.setContentsMargins(16, 16, 16, 16)
+        gen_layout.setContentsMargins(18, 16, 18, 16)
         gen_layout.setSpacing(12)
 
-        gen_layout.addWidget(QLabel("Report Type:"))
+        type_label = QLabel("Report Type:")
+        type_label.setStyleSheet("color: #A7AEC1;")
+        gen_layout.addWidget(type_label)
         self.type_combo = QComboBox()
         self.type_combo.addItem("Summary", "summary")
         self.type_combo.addItem("Detailed", "detailed")
         self.type_combo.addItem("Category Analysis", "category")
         gen_layout.addWidget(self.type_combo)
 
-        gen_layout.addWidget(QLabel("From:"))
+        from_label = QLabel("From:")
+        from_label.setStyleSheet("color: #A7AEC1;")
+        gen_layout.addWidget(from_label)
         self.date_from = QDateEdit()
         self.date_from.setDate(QDate.currentDate().addDays(-30))
         self.date_from.setCalendarPopup(True)
         gen_layout.addWidget(self.date_from)
 
-        gen_layout.addWidget(QLabel("To:"))
+        to_label = QLabel("To:")
+        to_label.setStyleSheet("color: #A7AEC1;")
+        gen_layout.addWidget(to_label)
         self.date_to = QDateEdit()
         self.date_to.setDate(QDate.currentDate())
         self.date_to.setCalendarPopup(True)
         gen_layout.addWidget(self.date_to)
 
-        self.generate_btn = QPushButton("Generate Report")
+        self.generate_btn = QPushButton("\U0001f4c4  Generate Report")
         self.generate_btn.setProperty("class", "accent")
         self.generate_btn.setCursor(Qt.PointingHandCursor)
         self.generate_btn.clicked.connect(self._generate_report)
@@ -72,7 +76,7 @@ class ReportsScreen(QWidget):
 
         # Reports history table
         table_label = QLabel("Generated Reports")
-        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #00b894;")
+        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #80A615;")
         layout.addWidget(table_label)
 
         self.table = QTableWidget()
@@ -109,17 +113,19 @@ class ReportsScreen(QWidget):
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
             actions_layout.setContentsMargins(4, 2, 4, 2)
-            actions_layout.setSpacing(4)
+            actions_layout.setSpacing(6)
 
-            open_btn = QPushButton("Open")
-            open_btn.setFixedSize(55, 28)
+            open_btn = QPushButton("\U0001f4c2  Open")
+            open_btn.setFixedSize(70, 28)
             open_btn.setCursor(Qt.PointingHandCursor)
             open_btn.clicked.connect(lambda _, r=report: self._open_report(r.file_path))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setFixedSize(28, 28)
             delete_btn.setCursor(Qt.PointingHandCursor)
-            delete_btn.setStyleSheet("background-color: #d63031; color: white; border-radius: 4px;")
+            delete_btn.setStyleSheet(
+                "background-color: #ef4444; color: white; border-radius: 6px;"
+            )
             delete_btn.clicked.connect(lambda _, r=report: self._delete_report(r.id))
 
             actions_layout.addWidget(open_btn)
@@ -154,7 +160,7 @@ class ReportsScreen(QWidget):
             show_toast(self, f"Failed to generate report: {e}", "error")
         finally:
             self.generate_btn.setEnabled(True)
-            self.generate_btn.setText("Generate Report")
+            self.generate_btn.setText("\U0001f4c4  Generate Report")
 
     def _open_report(self, file_path):
         if not os.path.exists(file_path):

@@ -2,20 +2,24 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, QScrollArea,
     QFrame, QSizePolicy
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
-from core.analytics_engine import AnalyticsEngine
+from backend.data_provider import DataProvider
 from ui.widgets.stat_card import StatCard
 from ui.widgets.chart_widget import ChartWidget
+from ui.widgets.toast import show_toast
 
 
 class DashboardScreen(QWidget):
-    """Main dashboard with stat cards and charts."""
+    """Main dashboard with stat cards, charts, and auto-refresh."""
+
+    REFRESH_INTERVAL_MS = 5000  # 5 seconds
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.analytics = AnalyticsEngine()
+        self.data = DataProvider()
         self._build_ui()
+        self._setup_auto_refresh()
 
     def _build_ui(self):
         scroll = QScrollArea()
@@ -30,21 +34,29 @@ class DashboardScreen(QWidget):
         # Page header
         header = QLabel("Dashboard")
         header.setProperty("class", "screen-title")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #e0e0e0;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #FFFFFF;")
         layout.addWidget(header)
 
         subtitle = QLabel("Overview of waste management operations")
-        subtitle.setStyleSheet("color: #8888aa; font-size: 11pt;")
+        subtitle.setStyleSheet("color: #A7AEC1; font-size: 11pt; margin-bottom: 8px;")
         layout.addWidget(subtitle)
 
-        # Stat cards row
+        # Stat cards row — with icons
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(16)
 
-        self.card_total = StatCard("Total Detections", "0", "All time", "#00b894")
-        self.card_today = StatCard("Today's Detections", "0", "Since midnight", "#0984e3")
-        self.card_category = StatCard("Top Category", "N/A", "Most detected", "#fdcb6e")
-        self.card_alerts = StatCard("Active Alerts", "0", "Unacknowledged", "#d63031")
+        self.card_total = StatCard(
+            "Total Detections", "0", "All time", "#80A615", "\U0001f4e6"  # 📦
+        )
+        self.card_today = StatCard(
+            "Today's Detections", "0", "Since midnight", "#FFC437", "\U0001f4c5"  # 📅
+        )
+        self.card_category = StatCard(
+            "Top Category", "N/A", "Most detected", "#3b82f6", "\U0001f3f7"  # 🏷
+        )
+        self.card_alerts = StatCard(
+            "Active Alerts", "0", "Unacknowledged", "#ef4444", "\U0001f514"  # 🔔
+        )
 
         cards_layout.addWidget(self.card_total)
         cards_layout.addWidget(self.card_today)
@@ -52,20 +64,18 @@ class DashboardScreen(QWidget):
         cards_layout.addWidget(self.card_alerts)
         layout.addLayout(cards_layout)
 
-        # Charts row
+        # Charts row (pie + bar)
         charts_layout = QHBoxLayout()
         charts_layout.setSpacing(16)
 
         # Category distribution pie chart
         pie_frame = QFrame()
-        pie_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
-        )
+        pie_frame.setProperty("class", "chart-frame")
         pie_layout = QVBoxLayout(pie_frame)
-        pie_layout.setContentsMargins(12, 12, 12, 12)
+        pie_layout.setContentsMargins(18, 18, 18, 14)
 
         pie_title = QLabel("Waste Category Distribution")
-        pie_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #e0e0e0;")
+        pie_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
         self.pie_chart = ChartWidget(parent=self, width=5, height=3.5)
 
         pie_layout.addWidget(pie_title)
@@ -73,14 +83,12 @@ class DashboardScreen(QWidget):
 
         # Daily detections bar chart
         bar_frame = QFrame()
-        bar_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
-        )
+        bar_frame.setProperty("class", "chart-frame")
         bar_layout = QVBoxLayout(bar_frame)
-        bar_layout.setContentsMargins(12, 12, 12, 12)
+        bar_layout.setContentsMargins(18, 18, 18, 14)
 
         bar_title = QLabel("Daily Detections (Last 7 Days)")
-        bar_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #e0e0e0;")
+        bar_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
         self.bar_chart = ChartWidget(parent=self, width=5, height=3.5)
 
         bar_layout.addWidget(bar_title)
@@ -90,16 +98,14 @@ class DashboardScreen(QWidget):
         charts_layout.addWidget(bar_frame)
         layout.addLayout(charts_layout)
 
-        # Trend line chart
+        # Full-width trend line chart
         trend_frame = QFrame()
-        trend_frame.setStyleSheet(
-            "background-color: #1a1a35; border: 1px solid #3a3a5a; border-radius: 12px;"
-        )
+        trend_frame.setProperty("class", "chart-frame")
         trend_layout = QVBoxLayout(trend_frame)
-        trend_layout.setContentsMargins(12, 12, 12, 12)
+        trend_layout.setContentsMargins(18, 18, 18, 14)
 
         trend_title = QLabel("Detection Trend (Last 30 Days)")
-        trend_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #e0e0e0;")
+        trend_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #FFFFFF;")
         self.trend_chart = ChartWidget(parent=self, width=10, height=3)
 
         trend_layout.addWidget(trend_title)
@@ -114,41 +120,44 @@ class DashboardScreen(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(scroll)
 
-    def refresh_data(self):
-        """Reload all dashboard data."""
-        # Stats
-        today_stats = self.analytics.get_today_stats()
-        total_stats = self.analytics.get_total_stats()
+    def _setup_auto_refresh(self):
+        """Set up a timer to refresh dashboard data periodically."""
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.timeout.connect(self.refresh_data)
+        self._refresh_timer.start(self.REFRESH_INTERVAL_MS)
 
-        self.card_total.update_value(str(total_stats["total_detections"]))
-        self.card_today.update_value(str(today_stats["total_today"]))
-        self.card_category.update_value(today_stats["most_common_category"])
-        self.card_alerts.update_value(str(today_stats["active_alerts"]))
+    def refresh_data(self):
+        """Reload all dashboard data from the data provider."""
+        # Summary stats
+        stats = self.data.get_summary_stats()
+
+        self.card_total.update_value(str(stats["total_detections"]))
+        self.card_today.update_value(str(stats["today_detections"]))
+        self.card_category.update_value(stats["top_category"])
+
+        alert_count = stats["active_alerts"]
+        self.card_alerts.update_value(str(alert_count))
+        self.card_alerts.set_alert_mode(alert_count > 0)
 
         # Pie chart
-        cat_dist = self.analytics.get_category_distribution()
+        cat_dist = self.data.get_category_distribution()
         if cat_dist:
             self.pie_chart.plot_pie(
-                list(cat_dist.keys()), list(cat_dist.values()),
-                ""
+                list(cat_dist.keys()), list(cat_dist.values()), ""
             )
         else:
             self.pie_chart.clear_chart()
 
         # Bar chart (7 days)
-        daily = self.analytics.get_daily_counts(7)
-        if daily:
-            dates = [d["date"][-5:] for d in daily]  # MM-DD
-            counts = [d["count"] for d in daily]
+        dates, counts = self.data.get_daily_detections(7)
+        if dates:
             self.bar_chart.plot_bar(dates, counts, "")
         else:
             self.bar_chart.clear_chart()
 
         # Trend line (30 days)
-        trend = self.analytics.get_trend_data(30)
-        if trend:
-            dates = [d["date"][-5:] for d in trend]
-            counts = [d["count"] for d in trend]
-            self.trend_chart.plot_line(dates, counts, "", "Date", "Detections")
+        t_dates, t_counts = self.data.get_trend_data(30)
+        if t_dates:
+            self.trend_chart.plot_line(t_dates, t_counts, "", "Date", "Detections")
         else:
             self.trend_chart.clear_chart()

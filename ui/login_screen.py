@@ -27,25 +27,25 @@ class LoginScreen(QWidget):
         # Card container
         card = QFrame()
         card.setObjectName("login-card")
-        card.setFixedSize(420, 460)
+        card.setFixedSize(420, 480)
 
         layout = QVBoxLayout(card)
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(12)
 
         # App icon / title
-        icon_label = QLabel("\U0001f5d1")
+        icon_label = QLabel("\u267b")
         icon_label.setFont(QFont("Segoe UI Emoji", 36))
         icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setStyleSheet("background: transparent;")
+        icon_label.setStyleSheet("background: transparent; color: #80A615;")
 
         title = QLabel("Smart Waste Management")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #00b894;")
+        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #80A615;")
 
         subtitle = QLabel("Sign in to continue")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("font-size: 10pt; color: #8888aa;")
+        subtitle.setStyleSheet("font-size: 10pt; color: #A7AEC1;")
 
         layout.addWidget(icon_label)
         layout.addWidget(title)
@@ -54,30 +54,30 @@ class LoginScreen(QWidget):
 
         # Username
         username_label = QLabel("Username")
-        username_label.setStyleSheet("font-size: 10pt; color: #8888aa;")
+        username_label.setStyleSheet("font-size: 10pt; color: #A7AEC1;")
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Enter your username")
-        self.username_input.setMinimumHeight(40)
+        self.username_input.setMinimumHeight(42)
 
         # Password
         password_label = QLabel("Password")
-        password_label.setStyleSheet("font-size: 10pt; color: #8888aa;")
+        password_label.setStyleSheet("font-size: 10pt; color: #A7AEC1;")
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
         self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setMinimumHeight(40)
+        self.password_input.setMinimumHeight(42)
         self.password_input.returnPressed.connect(self._on_login)
 
         # Error message
         self.error_label = QLabel("")
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: #d63031; font-size: 10pt;")
+        self.error_label.setStyleSheet("color: #ef4444; font-size: 10pt;")
         self.error_label.hide()
 
         # Login button
         self.login_btn = QPushButton("Sign In")
         self.login_btn.setProperty("class", "accent")
-        self.login_btn.setMinimumHeight(44)
+        self.login_btn.setMinimumHeight(46)
         self.login_btn.setCursor(Qt.PointingHandCursor)
         self.login_btn.clicked.connect(self._on_login)
 
