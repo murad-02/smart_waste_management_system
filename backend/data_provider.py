@@ -1,102 +1,62 @@
 """
-Data provider layer that wraps AnalyticsEngine and provides
-a clean interface for the dashboard. Falls back to mock data
-when the database has no records.
+Data provider layer that wraps AnalyticsEngine with a clean interface
+for the dashboard. Returns only real data from the database — empty
+results are surfaced honestly so the UI can render an empty state.
 """
 
-import random
-from datetime import datetime, timedelta
-
 from core.analytics_engine import AnalyticsEngine
+from core.alert_manager import AlertManager
 
 
 class DataProvider:
-    """Provides dashboard data from real DB or simulated fallback."""
+    """Provides dashboard data sourced from the database."""
 
     def __init__(self):
         self.analytics = AnalyticsEngine()
+        self.alert_mgr = AlertManager()
 
     def get_summary_stats(self) -> dict:
-        """Return summary stats for all four dashboard cards."""
-        today = self.analytics.get_today_stats()
+        """Return KPI numbers for the four dashboard stat cards."""
         total = self.analytics.get_total_stats()
+        today = self.analytics.get_today_stats()
+        status = self.analytics.get_status_breakdown()
 
-        result = {
+        return {
             "total_detections": total["total_detections"],
             "today_detections": today["total_today"],
-            "top_category": today["most_common_category"],
+            "week_detections": self.analytics.get_week_count(),
+            "pending_verifications": status["pending"],
             "active_alerts": today["active_alerts"],
+            "avg_confidence": self.analytics.get_avg_confidence(),
+            "last_detection_at": self.analytics.get_last_detection_time(),
         }
 
-        # If DB is empty, provide simulated data so the dashboard isn't blank
-        if result["total_detections"] == 0 and result["today_detections"] == 0:
-            result = self._mock_summary()
+    def get_fill_level_distribution(self) -> dict:
+        """Return {fill_level: count} across all detections."""
+        return self.analytics.get_fill_level_distribution()
 
-        return result
+    def get_status_breakdown(self) -> dict:
+        """Return {pending, verified, rejected} counts."""
+        return self.analytics.get_status_breakdown()
 
-    def get_category_distribution(self) -> dict:
-        """Return {category: count} for pie chart."""
-        data = self.analytics.get_category_distribution()
-        if data:
-            return data
-        return self._mock_category_distribution()
+    def get_recent_detections(self, limit: int = 8) -> list:
+        """Return the most recent detections."""
+        return self.analytics.get_recent_detections(limit)
 
     def get_daily_detections(self, days: int = 7) -> tuple:
-        """Return (dates, counts) for bar chart."""
+        """Return (date_labels, counts) for the bar chart. Empty on no data."""
         raw = self.analytics.get_daily_counts(days)
-        if raw and any(d["count"] > 0 for d in raw):
-            dates = [d["date"][-5:] for d in raw]
-            counts = [d["count"] for d in raw]
-            return dates, counts
-        return self._mock_daily_detections(days)
-
-    def get_trend_data(self, days: int = 30) -> tuple:
-        """Return (dates, counts) for line chart."""
-        raw = self.analytics.get_trend_data(days)
-        if raw and any(d["count"] > 0 for d in raw):
-            dates = [d["date"][-5:] for d in raw]
-            counts = [d["count"] for d in raw]
-            return dates, counts
-        return self._mock_trend_data(days)
-
-    # ------ Mock data generators (used when DB is empty) ------
-
-    @staticmethod
-    def _mock_summary() -> dict:
-        return {
-            "total_detections": random.randint(1200, 1600),
-            "today_detections": random.randint(15, 45),
-            "top_category": random.choice(["Plastic", "Paper", "Organic"]),
-            "active_alerts": random.randint(0, 5),
-        }
-
-    @staticmethod
-    def _mock_category_distribution() -> dict:
-        return {
-            "Plastic": random.randint(300, 500),
-            "Paper": random.randint(200, 350),
-            "Organic": random.randint(150, 280),
-            "Metal": random.randint(80, 150),
-            "Glass": random.randint(60, 120),
-            "Hazardous": random.randint(20, 60),
-            "E-Waste": random.randint(10, 40),
-        }
-
-    @staticmethod
-    def _mock_daily_detections(days: int = 7) -> tuple:
-        today = datetime.utcnow().date()
-        dates = [(today - timedelta(days=i)).strftime("%m-%d") for i in range(days - 1, -1, -1)]
-        counts = [random.randint(10, 50) for _ in range(days)]
+        if not raw:
+            return [], []
+        dates = [d["date"][-5:] for d in raw]
+        counts = [d["count"] for d in raw]
         return dates, counts
 
-    @staticmethod
-    def _mock_trend_data(days: int = 30) -> tuple:
-        today = datetime.utcnow().date()
-        dates = [(today - timedelta(days=i)).strftime("%m-%d") for i in range(days - 1, -1, -1)]
-        base = 25
-        counts = []
-        for _ in range(days):
-            base += random.randint(-3, 5)
-            base = max(5, base)
-            counts.append(base)
+    def get_trend_data(self, days: int = 30) -> tuple:
+        """Return (date_labels, counts) for the trend line chart."""
+        raw = self.analytics.get_trend_data(days)
+        if not raw:
+            return [], []
+        dates = [d["date"][-5:] for d in raw]
+        counts = [d["count"] for d in raw]
         return dates, counts

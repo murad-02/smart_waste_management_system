@@ -1,5 +1,7 @@
 import os
 
+import cv2
+
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog,
     QFrame, QScrollArea, QSizePolicy, QMessageBox
@@ -30,6 +32,45 @@ class DetectionWorker(QThread):
         self.finished.emit(results)
 
 
+class VideoDetectionWorker(QThread):
+    """Worker thread that streams YOLO detection over a video file.
+
+    Emits `frame_ready(dict)` per processed frame and `finished_stream(int, str)`
+    once the stream ends (with total bin-detection count and an optional error).
+    """
+
+    frame_ready = pyqtSignal(dict)
+    finished_stream = pyqtSignal(int, str)  # total_detections, error_message
+
+    def __init__(self, engine, video_path, frame_stride=1, parent=None):
+        super().__init__(parent)
+        self.engine = engine
+        self.video_path = video_path
+        self.frame_stride = frame_stride
+        self._stop = False
+
+    def stop(self):
+        self._stop = True
+
+    def run(self):
+        total_dets = 0
+        err = ""
+        try:
+            for payload in self.engine.detect_video_stream(
+                self.video_path,
+                frame_stride=self.frame_stride,
+                stop_flag=lambda: self._stop,
+            ):
+                if payload.get("error"):
+                    err = payload["error"]
+                    break
+                total_dets += len(payload.get("detections") or [])
+                self.frame_ready.emit(payload)
+        except Exception as e:
+            err = str(e)
+        self.finished_stream.emit(total_dets, err)
+
+
 class DetectionScreen(QWidget):
     """Screen for uploading images and running waste detection."""
 
@@ -40,7 +81,9 @@ class DetectionScreen(QWidget):
         self.alert_mgr = AlertManager()
         self.log = LogManager()
         self.selected_image_path = None
+        self.selected_video_path = None
         self._worker = None
+        self._video_worker = None
         self._build_ui()
 
     def _build_ui(self):
@@ -86,10 +129,22 @@ class DetectionScreen(QWidget):
         self.select_btn.setCursor(Qt.PointingHandCursor)
         self.select_btn.clicked.connect(self._select_image)
 
+        self.select_video_btn = QPushButton("\U0001f3a5  Select Video")
+        self.select_video_btn.setMinimumHeight(42)
+        self.select_video_btn.setMaximumWidth(200)
+        self.select_video_btn.setCursor(Qt.PointingHandCursor)
+        self.select_video_btn.clicked.connect(self._select_video)
+
+        select_row = QHBoxLayout()
+        select_row.setAlignment(Qt.AlignCenter)
+        select_row.setSpacing(12)
+        select_row.addWidget(self.select_btn)
+        select_row.addWidget(self.select_video_btn)
+
         upload_layout.addWidget(upload_icon)
         upload_layout.addWidget(upload_text)
         upload_layout.addSpacing(8)
-        upload_layout.addWidget(self.select_btn, alignment=Qt.AlignCenter)
+        upload_layout.addLayout(select_row)
 
         layout.addWidget(upload_frame)
 
@@ -141,15 +196,30 @@ class DetectionScreen(QWidget):
         preview_results.addWidget(self.result_frame)
         layout.addLayout(preview_results)
 
-        # Run detection button
+        # Run / Stop buttons
         self.run_btn = QPushButton("\U0001f50d  Run Detection")
         self.run_btn.setProperty("class", "accent")
         self.run_btn.setMinimumHeight(48)
-        self.run_btn.setMaximumWidth(250)
+        self.run_btn.setMinimumWidth(260)
+        self.run_btn.setMaximumWidth(320)
         self.run_btn.setCursor(Qt.PointingHandCursor)
         self.run_btn.clicked.connect(self._run_detection)
         self.run_btn.setEnabled(False)
-        layout.addWidget(self.run_btn, alignment=Qt.AlignCenter)
+
+        self.stop_btn = QPushButton("⏹  Stop")
+        self.stop_btn.setMinimumHeight(48)
+        self.stop_btn.setMinimumWidth(120)
+        self.stop_btn.setMaximumWidth(160)
+        self.stop_btn.setCursor(Qt.PointingHandCursor)
+        self.stop_btn.clicked.connect(self._stop_video_detection)
+        self.stop_btn.setVisible(False)
+
+        run_row = QHBoxLayout()
+        run_row.setAlignment(Qt.AlignCenter)
+        run_row.setSpacing(12)
+        run_row.addWidget(self.run_btn)
+        run_row.addWidget(self.stop_btn)
+        layout.addLayout(run_row)
 
         # Results details — card
         self.results_frame = QFrame()
@@ -186,17 +256,41 @@ class DetectionScreen(QWidget):
         )
         if file_path:
             self.selected_image_path = file_path
+            self.selected_video_path = None
             pixmap = QPixmap(file_path)
             scaled = pixmap.scaled(400, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.source_image_label.setPixmap(scaled)
             self.source_frame.show()
             self.result_frame.hide()
             self.results_frame.hide()
+            self.run_btn.setText("\U0001f50d  Run Detection")
+            self.run_btn.setEnabled(True)
+
+    def _select_video(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Video", "",
+            "Videos (*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm)"
+        )
+        if file_path:
+            self.selected_video_path = file_path
+            self.selected_image_path = None
+            self.source_image_label.setText(
+                f"Video selected:\n{os.path.basename(file_path)}"
+            )
+            self.source_image_label.setPixmap(QPixmap())
+            self.source_frame.show()
+            self.result_frame.hide()
+            self.results_frame.hide()
+            self.run_btn.setText("\u25B6  Run Video Detection")
             self.run_btn.setEnabled(True)
 
     def _run_detection(self):
+        if self.selected_video_path:
+            self._run_video_detection()
+            return
+
         if not self.selected_image_path:
-            show_toast(self, "Please select an image first.", "warning")
+            show_toast(self, "Please select an image or video first.", "warning")
             return
         if not self.current_user:
             show_toast(self, "No user logged in.", "error")
@@ -205,6 +299,7 @@ class DetectionScreen(QWidget):
         # Disable buttons and show loading state
         self.run_btn.setEnabled(False)
         self.select_btn.setEnabled(False)
+        self.select_video_btn.setEnabled(False)
         self.run_btn.setText("\u23F3  Detecting...")
         self.result_image_label.setText("Running detection, please wait...")
         self.result_frame.show()
@@ -217,11 +312,92 @@ class DetectionScreen(QWidget):
         self._worker.finished.connect(self._on_detection_finished)
         self._worker.start()
 
+    def _run_video_detection(self):
+        if not self.selected_video_path:
+            show_toast(self, "Please select a video first.", "warning")
+            return
+        if not self.current_user:
+            show_toast(self, "No user logged in.", "error")
+            return
+
+        self.run_btn.setEnabled(False)
+        self.select_btn.setEnabled(False)
+        self.select_video_btn.setEnabled(False)
+        self.run_btn.setText("\u23F3  Detecting...")
+        self.stop_btn.setVisible(True)
+        self.stop_btn.setEnabled(True)
+
+        self.result_image_label.setText("Starting video stream...")
+        self.result_image_label.setPixmap(QPixmap())
+        self.result_frame.show()
+        self.results_content.setText("Streaming video \u2014 detecting bins in real time...")
+        self.results_frame.show()
+
+        self._video_worker = VideoDetectionWorker(
+            self.engine, self.selected_video_path, frame_stride=1
+        )
+        self._video_worker.frame_ready.connect(self._on_video_frame)
+        self._video_worker.finished_stream.connect(self._on_video_stream_finished)
+        self._video_worker.start()
+
+    def _on_video_frame(self, payload):
+        """Render a single annotated frame on the UI thread."""
+        annotated = payload.get("annotated")
+        if annotated is None:
+            return
+
+        img_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+        h, w, ch = img_rgb.shape
+        bytes_per_line = ch * w
+        qimg = QImage(img_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qimg.copy())
+        scaled = pixmap.scaled(640, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.result_image_label.setPixmap(scaled)
+
+        idx = payload.get("frame_index", 0)
+        total = payload.get("total_frames", 0)
+        det_count = len(payload.get("detections") or [])
+        progress = f"frame {idx}/{total}" if total else f"frame {idx}"
+        self.results_content.setText(
+            f"Streaming \u2014 {progress}, bins detected this frame: {det_count}"
+        )
+
+    def _on_video_stream_finished(self, total_dets, error):
+        """Called when the video stream worker finishes (end of file or stop)."""
+        self.run_btn.setEnabled(True)
+        self.select_btn.setEnabled(True)
+        self.select_video_btn.setEnabled(True)
+        self.run_btn.setText("\u25B6  Run Video Detection")
+        self.stop_btn.setVisible(False)
+
+        if error:
+            show_toast(self, f"Video detection error: {error}", "error")
+            self.results_content.setText(f"Video detection failed: {error}")
+            return
+
+        self.results_content.setText(
+            f"Video detection complete. Total bin detections across frames: {total_dets}."
+        )
+        show_toast(self, f"Video done \u2014 {total_dets} bin detection(s).", "success")
+
+        if self.current_user:
+            self.log.log_activity(
+                self.current_user.id, "video_detection",
+                f"Ran video detection on {os.path.basename(self.selected_video_path)}; "
+                f"{total_dets} bin detection(s) across frames"
+            )
+
+    def _stop_video_detection(self):
+        if self._video_worker is not None and self._video_worker.isRunning():
+            self.stop_btn.setEnabled(False)
+            self._video_worker.stop()
+
     def _on_detection_finished(self, results):
         """Called on the main thread when the worker finishes."""
         # Re-enable buttons
         self.run_btn.setEnabled(True)
         self.select_btn.setEnabled(True)
+        self.select_video_btn.setEnabled(True)
         self.run_btn.setText("\U0001f50d  Run Detection")
 
         # Handle errors
@@ -232,7 +408,6 @@ class DetectionScreen(QWidget):
 
         # Display annotated result image (BGR → RGB → QImage → QPixmap)
         if results["result_image_path"] and os.path.isfile(results["result_image_path"]):
-            import cv2
             img_bgr = cv2.imread(results["result_image_path"])
             if img_bgr is not None:
                 img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)

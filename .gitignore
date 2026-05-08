@@ -26,6 +26,8 @@ venv/
 *.log
 coverage/
 htmlcov/
+error_log.txt
+stderr.txt
 
 # Build artifacts
 build/
@@ -46,3 +48,4 @@ node_modules/
 *.pt
 *.onnx
 *.yaml
+/data

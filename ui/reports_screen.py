@@ -91,11 +91,12 @@ class ReportsScreen(QWidget):
         header.setSectionResizeMode(5, QHeaderView.Fixed)          # Actions
         self.table.setColumnWidth(0, 50)
         self.table.setColumnWidth(1, 100)
-        self.table.setColumnWidth(5, 130)
+        self.table.setColumnWidth(5, 170)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(46)
         layout.addWidget(self.table)
 
     def refresh_data(self):
@@ -125,12 +126,19 @@ class ReportsScreen(QWidget):
 
             open_btn = QPushButton("Open")
             open_btn.setCursor(Qt.PointingHandCursor)
+            open_btn.setFixedHeight(30)
+            open_btn.setStyleSheet(
+                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "border-radius: 4px; padding: 2px 14px; font-size: 10pt; min-height: 0px;"
+            )
             open_btn.clicked.connect(lambda _, r=report: self._open_report(r.file_path))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setCursor(Qt.PointingHandCursor)
+            delete_btn.setFixedSize(34, 30)
             delete_btn.setStyleSheet(
-                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             delete_btn.clicked.connect(lambda _, r=report: self._delete_report(r.id))
 

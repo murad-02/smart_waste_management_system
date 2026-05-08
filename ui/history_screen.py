@@ -171,11 +171,12 @@ class HistoryScreen(QWidget):
         self.table.setColumnWidth(0, 50)
         self.table.setColumnWidth(3, 90)
         self.table.setColumnWidth(5, 90)
-        self.table.setColumnWidth(7, 200)
+        self.table.setColumnWidth(7, 280)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(48)
         layout.addWidget(self.table)
 
     def refresh_data(self):
@@ -233,29 +234,40 @@ class HistoryScreen(QWidget):
 
             view_btn = QPushButton("View")
             view_btn.setCursor(Qt.PointingHandCursor)
+            view_btn.setFixedHeight(30)
+            view_btn.setStyleSheet(
+                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "border-radius: 4px; padding: 2px 10px; font-size: 10pt; min-height: 0px;"
+            )
             view_btn.clicked.connect(lambda _, d=det: self._view_detail(d))
 
             verify_btn = QPushButton("\u2714")
             verify_btn.setToolTip("Verify")
             verify_btn.setCursor(Qt.PointingHandCursor)
+            verify_btn.setFixedSize(34, 30)
             verify_btn.setStyleSheet(
-                "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; "
+                "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             verify_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "verified"))
 
             reject_btn = QPushButton("\u2718")
             reject_btn.setToolTip("Reject")
             reject_btn.setCursor(Qt.PointingHandCursor)
+            reject_btn.setFixedSize(34, 30)
             reject_btn.setStyleSheet(
-                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             reject_btn.clicked.connect(lambda _, d=det: self._update_status(d.id, "rejected"))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setToolTip("Delete")
             delete_btn.setCursor(Qt.PointingHandCursor)
+            delete_btn.setFixedSize(34, 30)
             delete_btn.setStyleSheet(
-                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             delete_btn.clicked.connect(lambda _, d=det: self._delete_detection(d.id))
 

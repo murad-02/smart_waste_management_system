@@ -126,11 +126,12 @@ class AlertsScreen(QWidget):
         a_header.setSectionResizeMode(4, QHeaderView.Fixed)        # Actions
         self.alerts_table.setColumnWidth(0, 50)
         self.alerts_table.setColumnWidth(2, 90)
-        self.alerts_table.setColumnWidth(4, 150)
+        self.alerts_table.setColumnWidth(4, 130)
         self.alerts_table.setAlternatingRowColors(True)
         self.alerts_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.alerts_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.alerts_table.verticalHeader().setVisible(False)
+        self.alerts_table.verticalHeader().setDefaultSectionSize(46)
         alerts_layout.addWidget(self.alerts_table)
 
         self.tabs.addTab(alerts_widget, "\u26a0  Triggered Alerts")
@@ -163,11 +164,12 @@ class AlertsScreen(QWidget):
         self.rules_table.setColumnWidth(0, 50)
         self.rules_table.setColumnWidth(3, 80)
         self.rules_table.setColumnWidth(5, 70)
-        self.rules_table.setColumnWidth(6, 140)
+        self.rules_table.setColumnWidth(6, 200)
         self.rules_table.setAlternatingRowColors(True)
         self.rules_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.rules_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.rules_table.verticalHeader().setVisible(False)
+        self.rules_table.verticalHeader().setDefaultSectionSize(46)
         rules_layout.addWidget(self.rules_table)
 
         self.tabs.addTab(rules_widget, "\U0001f4cb  Alert Rules")
@@ -207,8 +209,10 @@ class AlertsScreen(QWidget):
             ack_layout.setAlignment(Qt.AlignCenter)
 
             ack_btn = QPushButton("\u2714 Ack")
+            ack_btn.setFixedHeight(30)
             ack_btn.setStyleSheet(
-                "background-color: #52796A; color: #E5E5E5; border: none; border-radius: 4px; padding: 4px 8px; font-weight: bold;"
+                "background-color: #52796A; color: #E5E5E5; border: none; border-radius: 4px; "
+                "padding: 2px 12px; font-weight: bold; font-size: 10pt; min-height: 0px;"
             )
             ack_btn.setCursor(Qt.PointingHandCursor)
             ack_btn.clicked.connect(lambda _, a=alert: self._acknowledge(a.id))
@@ -249,12 +253,19 @@ class AlertsScreen(QWidget):
 
             edit_btn = QPushButton("Edit")
             edit_btn.setCursor(Qt.PointingHandCursor)
+            edit_btn.setFixedHeight(30)
+            edit_btn.setStyleSheet(
+                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "border-radius: 4px; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
+            )
             edit_btn.clicked.connect(lambda _, r=rule: self._edit_rule(r))
 
             delete_btn = QPushButton("\U0001f5d1")
             delete_btn.setCursor(Qt.PointingHandCursor)
+            delete_btn.setFixedSize(34, 30)
             delete_btn.setStyleSheet(
-                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             delete_btn.clicked.connect(lambda _, r=rule: self._delete_rule(r.id))
 

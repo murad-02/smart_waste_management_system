@@ -58,6 +58,7 @@ class LoginScreen(QWidget):
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Enter your username")
         self.username_input.setMinimumHeight(42)
+        self.username_input.returnPressed.connect(lambda: self.password_input.setFocus())
 
         # Password
         password_label = QLabel("Password")

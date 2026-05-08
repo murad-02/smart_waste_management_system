@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
     def _load_stylesheet(self):
         qss_path = os.path.join(STYLES_DIR, "main.qss")
         if os.path.exists(qss_path):
-            with open(qss_path, "r") as f:
+            with open(qss_path, "r", encoding="utf-8") as f:
                 self.setStyleSheet(f.read())
 
     def _build_ui(self):

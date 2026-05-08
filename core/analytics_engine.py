@@ -137,6 +137,87 @@ class AnalyticsEngine:
         finally:
             session.close()
 
+    def get_status_breakdown(self) -> dict:
+        """Return {pending, verified, rejected} counts across all detections."""
+        session = Session()
+        try:
+            rows = session.query(
+                Detection.status, func.count(Detection.id)
+            ).group_by(Detection.status).all()
+            result = {"pending": 0, "verified": 0, "rejected": 0}
+            for status, count in rows:
+                if status in result:
+                    result[status] = count
+            return result
+        except Exception:
+            return {"pending": 0, "verified": 0, "rejected": 0}
+        finally:
+            session.close()
+
+    def get_avg_confidence(self, days: int = None) -> float:
+        """Return average confidence (0-1). Optionally restrict to last N days."""
+        session = Session()
+        try:
+            query = session.query(func.avg(Detection.confidence))
+            if days is not None and days > 0:
+                cutoff = datetime.utcnow() - timedelta(days=days)
+                query = query.filter(Detection.detected_at >= cutoff)
+            value = query.scalar()
+            return float(value) if value is not None else 0.0
+        except Exception:
+            return 0.0
+        finally:
+            session.close()
+
+    def get_week_count(self) -> int:
+        """Return total detections in the last 7 days (rolling)."""
+        session = Session()
+        try:
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            count = session.query(func.count(Detection.id)).filter(
+                Detection.detected_at >= cutoff
+            ).scalar() or 0
+            return int(count)
+        except Exception:
+            return 0
+        finally:
+            session.close()
+
+    def get_last_detection_time(self):
+        """Return the datetime of the most recent detection, or None."""
+        session = Session()
+        try:
+            value = session.query(func.max(Detection.detected_at)).scalar()
+            return value
+        except Exception:
+            return None
+        finally:
+            session.close()
+
+    def get_recent_detections(self, limit: int = 8) -> list:
+        """Return the most recent N detections as plain dicts."""
+        session = Session()
+        try:
+            rows = session.query(Detection, User.full_name).outerjoin(
+                User, Detection.detected_by == User.id
+            ).order_by(Detection.detected_at.desc()).limit(limit).all()
+
+            results = []
+            for det, full_name in rows:
+                results.append({
+                    "id": det.id,
+                    "fill_level": det.bin_fill_level or "",
+                    "confidence": float(det.confidence or 0.0),
+                    "status": det.status or "pending",
+                    "detected_at": det.detected_at,
+                    "operator": full_name or f"User #{det.detected_by}",
+                })
+            return results
+        except Exception:
+            return []
+        finally:
+            session.close()
+
     def get_operator_performance(self, start_date=None, end_date=None) -> list:
         """Return [{user, detection_count}] for operator performance."""
         session = Session()

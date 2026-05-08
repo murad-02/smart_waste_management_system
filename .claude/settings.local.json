@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\(r'F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\ui\\\\detection_screen.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK ui/detection_screen.py'\\)\")",
+      "Bash(\"F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\(r'F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\core\\\\detection_engine.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK core/detection_engine.py'\\)\")",
+      "Bash(\"F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\(r'F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\database\\\\models.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK database/models.py'\\)\")",
+      "Bash(\"F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\(r'F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\ui\\\\main_window.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK ui/main_window.py'\\)\")",
+      "Bash(\"F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\(r'F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\ui\\\\login_screen.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK ui/login_screen.py'\\)\")",
+      "Bash(F:\\\\Courses\\\\Practicum\\\\smart_waste_management\\\\.venv\\\\Scripts\\\\python.exe *)"
+    ]
+  }
+}

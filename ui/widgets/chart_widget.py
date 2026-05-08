@@ -86,6 +86,73 @@ class ChartWidget(FigureCanvas):
         self.fig.tight_layout()
         self.draw()
 
+    def plot_donut(self, labels: list, values: list, title: str = "",
+                   center_text: str = "", center_subtext: str = "",
+                   color_map: dict = None, min_label_pct: float = 8.0):
+        """Draw a clean donut: wedges only, percentage labels inside slices that
+        are large enough (>= min_label_pct), and a big readable center value.
+
+        Args:
+            labels: per-wedge label (used for color_map lookup, not plotted around).
+            values: per-wedge numeric value.
+            title: optional axis title.
+            center_text: large bold text drawn in the donut hole (e.g. total).
+            center_subtext: smaller muted text below center_text.
+            color_map: optional {label: hex_color}.
+            min_label_pct: hide the in-wedge percent label below this percentage.
+        """
+        self.fig.clear()
+        ax = self.fig.add_subplot(111)
+        ax.set_facecolor(self.BG_COLOR)
+
+        if color_map:
+            colors = [color_map.get(label, self.COLORS[i % len(self.COLORS)])
+                      for i, label in enumerate(labels)]
+        else:
+            colors = self.COLORS[:len(labels)]
+
+        total = float(sum(values)) or 1.0
+
+        def _autopct(pct):
+            return f"{pct:.0f}%" if pct >= min_label_pct else ""
+
+        wedges, _texts, autotexts = ax.pie(
+            values,
+            labels=None,                     # legend is rendered in Qt — no clutter here
+            autopct=_autopct,
+            colors=colors,
+            pctdistance=0.78,
+            startangle=90,
+            counterclock=False,
+            wedgeprops={
+                "edgecolor": self.BG_COLOR,
+                "linewidth": 3,
+                "width": 0.34,                # ring thickness
+                "antialiased": True,
+            },
+        )
+        for t in autotexts:
+            t.set_color("#1A1D1F")
+            t.set_fontsize(10)
+            t.set_fontweight("bold")
+
+        ax.set_aspect("equal")
+
+        if center_text:
+            ax.text(0, 0.08 if center_subtext else 0, center_text,
+                    ha="center", va="center",
+                    fontsize=22, fontweight="bold", color=self.TEXT_COLOR)
+        if center_subtext:
+            ax.text(0, -0.18, center_subtext, ha="center", va="center",
+                    fontsize=10, color=self.MUTED_COLOR)
+
+        if title:
+            ax.set_title(title, fontsize=12, fontweight="bold",
+                         color=self.TEXT_COLOR)
+
+        self.fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
+        self.draw()
+
     def plot_line(self, x_data: list, y_data: list, title: str = "",
                   xlabel: str = "", ylabel: str = ""):
         """Draw a smooth line chart with primary green."""

@@ -1,5 +1,6 @@
 import os
 import csv
+import threading
 from datetime import datetime
 
 import cv2
@@ -13,15 +14,18 @@ from database.models import Detection
 # Load YOLOv8 model once at module level
 MODEL_PATH = os.path.join(BASE_DIR, "models", "best.pt")
 _model = None
+_model_lock = threading.Lock()
 
 
 def get_model():
     """Load and cache the YOLO model. Raises FileNotFoundError if missing."""
     global _model
     if _model is None:
-        if not os.path.isfile(MODEL_PATH):
-            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
-        _model = YOLO(MODEL_PATH)
+        with _model_lock:
+            if _model is None:
+                if not os.path.isfile(MODEL_PATH):
+                    raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+                _model = YOLO(MODEL_PATH)
     return _model
 
 
@@ -153,6 +157,97 @@ class DetectionEngine:
             "result_image_path": result_image_path,
             "detection_ids": detection_ids,
         }
+
+    def detect_video_stream(self, video_path: str, conf: float = 0.3,
+                            frame_stride: int = 1, stop_flag=None):
+        """Generator that yields annotated frames from a video, one at a time.
+
+        Args:
+            video_path: path to the input video file (or 0 for the default webcam).
+            conf: YOLO confidence threshold.
+            frame_stride: process every Nth frame (1 = every frame).
+            stop_flag: optional callable returning True to abort early.
+
+        Yields:
+            dict per processed frame with keys:
+              - frame_index (int)
+              - total_frames (int, may be 0 for live cameras)
+              - fps (float)
+              - annotated (np.ndarray, BGR)
+              - detections (list of {category, confidence, bbox})
+              - error (str or None — only set on the final yield if something failed)
+        """
+        # Load model
+        try:
+            model = get_model()
+        except FileNotFoundError as e:
+            yield {
+                "frame_index": 0, "total_frames": 0, "fps": 0.0,
+                "annotated": None, "detections": [], "error": str(e),
+            }
+            return
+
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            yield {
+                "frame_index": 0, "total_frames": 0, "fps": 0.0,
+                "annotated": None, "detections": [],
+                "error": f"Failed to open video: {video_path}",
+            }
+            return
+
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+        fps = float(cap.get(cv2.CAP_PROP_FPS)) or 0.0
+
+        bin_class_indices = [
+            idx for idx, name in model.names.items() if str(name).lower() == "bin"
+        ]
+
+        frame_index = 0
+        try:
+            while True:
+                if stop_flag is not None and stop_flag():
+                    break
+
+                ok, frame = cap.read()
+                if not ok or frame is None:
+                    break
+
+                frame_index += 1
+                if frame_stride > 1 and (frame_index % frame_stride) != 0:
+                    continue
+
+                if bin_class_indices:
+                    results = model.predict(
+                        frame, conf=conf, classes=bin_class_indices, verbose=False
+                    )
+                else:
+                    results = model.predict(frame, conf=conf, verbose=False)
+
+                annotated = results[0].plot()
+
+                detections = []
+                for box in results[0].boxes:
+                    cls_id = int(box.cls[0])
+                    category = model.names[cls_id]
+                    if str(category).lower() != "bin":
+                        continue
+                    detections.append({
+                        "category": category,
+                        "confidence": float(box.conf[0]),
+                        "bbox": box.xyxy[0].tolist(),
+                    })
+
+                yield {
+                    "frame_index": frame_index,
+                    "total_frames": total_frames,
+                    "fps": fps,
+                    "annotated": annotated,
+                    "detections": detections,
+                    "error": None,
+                }
+        finally:
+            cap.release()
 
     def get_detection_by_id(self, detection_id: int):
         """Return a Detection by ID or None."""

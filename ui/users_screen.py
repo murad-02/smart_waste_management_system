@@ -131,11 +131,12 @@ class UsersScreen(QWidget):
         self.table.setColumnWidth(0, 50)
         self.table.setColumnWidth(4, 100)
         self.table.setColumnWidth(5, 90)
-        self.table.setColumnWidth(6, 180)
+        self.table.setColumnWidth(6, 240)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(46)
         layout.addWidget(self.table)
 
     def refresh_data(self):
@@ -178,21 +179,29 @@ class UsersScreen(QWidget):
 
             edit_btn = QPushButton("Edit")
             edit_btn.setCursor(Qt.PointingHandCursor)
+            edit_btn.setFixedHeight(30)
+            edit_btn.setStyleSheet(
+                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "border-radius: 4px; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
+            )
             edit_btn.clicked.connect(lambda _, u=user: self._edit_user(u))
 
             if user.is_active:
                 toggle_btn = QPushButton("Deactivate")
                 toggle_btn.setStyleSheet(
-                    "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                    "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                    "font-weight: bold; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
                 )
                 toggle_btn.clicked.connect(lambda _, u=user: self._deactivate_user(u.id))
             else:
                 toggle_btn = QPushButton("Activate")
                 toggle_btn.setStyleSheet(
-                    "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; font-weight: bold; padding: 4px 8px;"
+                    "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; "
+                    "font-weight: bold; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
                 )
                 toggle_btn.clicked.connect(lambda _, u=user: self._activate_user(u.id))
 
+            toggle_btn.setFixedHeight(30)
             toggle_btn.setCursor(Qt.PointingHandCursor)
 
             actions_layout.addWidget(edit_btn)
