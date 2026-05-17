@@ -164,7 +164,7 @@ class AlertsScreen(QWidget):
         self.rules_table.setColumnWidth(0, 50)
         self.rules_table.setColumnWidth(3, 80)
         self.rules_table.setColumnWidth(5, 70)
-        self.rules_table.setColumnWidth(6, 200)
+        self.rules_table.setColumnWidth(6, 260)
         self.rules_table.setAlternatingRowColors(True)
         self.rules_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.rules_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -251,6 +251,20 @@ class AlertsScreen(QWidget):
             actions_layout.setSpacing(6)
             actions_layout.setAlignment(Qt.AlignCenter)
 
+            test_btn = QPushButton("Test")
+            test_btn.setCursor(Qt.PointingHandCursor)
+            test_btn.setFixedHeight(30)
+            test_btn.setToolTip(
+                "Force-trigger this rule: creates an alert and sends the email "
+                "immediately, bypassing the count and once-per-day cap."
+            )
+            test_btn.setStyleSheet(
+                "background-color: #52796A; color: #E5E5E5; border: none; "
+                "border-radius: 4px; padding: 2px 12px; font-size: 10pt; "
+                "font-weight: bold; min-height: 0px;"
+            )
+            test_btn.clicked.connect(lambda _, r=rule: self._test_rule(r.id))
+
             edit_btn = QPushButton("Edit")
             edit_btn.setCursor(Qt.PointingHandCursor)
             edit_btn.setFixedHeight(30)
@@ -269,6 +283,7 @@ class AlertsScreen(QWidget):
             )
             delete_btn.clicked.connect(lambda _, r=rule: self._delete_rule(r.id))
 
+            actions_layout.addWidget(test_btn)
             actions_layout.addWidget(edit_btn)
             actions_layout.addWidget(delete_btn)
             actions_layout.addStretch()
@@ -313,6 +328,18 @@ class AlertsScreen(QWidget):
                 self.refresh_data()
             else:
                 show_toast(self, "Failed to update rule.", "error")
+
+    def _test_rule(self, rule_id):
+        """Force-send a test alert email for this rule."""
+        success, msg = self.alert_mgr.send_test_alert(rule_id)
+        if success:
+            if self.current_user:
+                self.log.log_activity(self.current_user.id, "alert_test",
+                                      f"Sent test alert for rule #{rule_id}")
+            show_toast(self, msg, "success", 4000)
+            self.refresh_data()
+        else:
+            QMessageBox.warning(self, "Test Alert Failed", msg)
 
     def _delete_rule(self, rule_id):
         reply = QMessageBox.question(

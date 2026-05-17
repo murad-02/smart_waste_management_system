@@ -7,6 +7,9 @@ RESULTS_DIR = os.path.join(BASE_DIR, "data", "results")
 REPORTS_DIR = os.path.join(BASE_DIR, "data", "reports")
 ICONS_DIR = os.path.join(BASE_DIR, "assets", "icons")
 STYLES_DIR = os.path.join(BASE_DIR, "assets", "styles")
+MODELS_DIR = os.path.join(BASE_DIR, "models")
+BIN_MODEL_PATH = os.path.join(MODELS_DIR, "best.pt")
+BIN_LEVEL_MODEL_PATH = os.path.join(MODELS_DIR, "best_bin_level.pt")
 
 # Ensure directories exist
 for d in [UPLOAD_DIR, RESULTS_DIR, REPORTS_DIR]:

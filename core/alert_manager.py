@@ -7,6 +7,18 @@ from database.models import AlertRule, Alert, Detection
 from core.notification_service import NotificationService
 
 
+def _period_start(now: datetime, period: str):
+    """Return the start of the current 'daily'/'weekly'/'monthly' window."""
+    if period == "daily":
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "weekly":
+        start = now - timedelta(days=now.weekday())
+        return start.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "monthly":
+        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return None
+
+
 class AlertManager:
     """Manages alert rules and triggered alerts."""
 
@@ -102,19 +114,13 @@ class AlertManager:
             for rule in rules:
                 # Determine the time window based on the period
                 now = datetime.utcnow()
-                if rule.period == "daily":
-                    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif rule.period == "weekly":
-                    start = now - timedelta(days=now.weekday())
-                    start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif rule.period == "monthly":
-                    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                else:
+                start = _period_start(now, rule.period)
+                if start is None:
                     continue
 
-                # Count detections for this category in the period
+                # Count detections for this category in the period (case-insensitive)
                 count = session.query(func.count(Detection.id)).filter(
-                    Detection.waste_category == rule.category,
+                    func.lower(Detection.waste_category) == (rule.category or "").lower(),
                     Detection.detected_at >= start
                 ).scalar() or 0
 
@@ -195,6 +201,68 @@ class AlertManager:
             return []
         finally:
             session.close()
+
+    def send_test_alert(self, rule_id: int):
+        """Force-trigger an alert for a rule, bypassing count/dedup.
+
+        Creates an Alert record (severity='info') and sends the configured
+        notification email immediately. Returns (success, message).
+        """
+        session = Session()
+        try:
+            rule = session.query(AlertRule).filter_by(id=rule_id).first()
+            if not rule:
+                return False, f"Rule #{rule_id} not found."
+
+            now = datetime.utcnow()
+            start = _period_start(now, rule.period) or now
+            count = session.query(func.count(Detection.id)).filter(
+                func.lower(Detection.waste_category) == (rule.category or "").lower(),
+                Detection.detected_at >= start
+            ).scalar() or 0
+
+            message = (
+                f"[TEST] {rule.rule_name} — {rule.category} detections currently "
+                f"{count}/{rule.threshold_value} ({rule.period})"
+            )
+            alert = Alert(
+                rule_id=rule.id,
+                message=message,
+                severity="info",
+                is_acknowledged=False,
+                triggered_at=now,
+            )
+            session.add(alert)
+            session.flush()
+            session.refresh(alert)
+            session.expunge(alert)
+
+            # Snapshot rule fields before closing the session
+            rule_copy = AlertRule(
+                rule_name=rule.rule_name,
+                category=rule.category,
+                threshold_value=rule.threshold_value,
+                period=rule.period,
+                notify_email=rule.notify_email,
+            )
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return False, f"Database error: {e}"
+        finally:
+            session.close()
+
+        if not rule_copy.notify_email:
+            return True, "Test alert recorded, but no notify_email is set on this rule."
+
+        ok = self.notification_service.send_bin_full_alert(alert, rule_copy, count)
+        if ok:
+            return True, f"Test alert sent to {rule_copy.notify_email}."
+        return False, (
+            "Test alert recorded, but the email failed to send. "
+            "Open Settings → SMTP → Test Connection to see the SMTP error."
+        )
 
     def acknowledge_alert(self, alert_id: int, user_id: int) -> bool:
         """Mark an alert as acknowledged."""

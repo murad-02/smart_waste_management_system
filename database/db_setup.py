@@ -62,6 +62,7 @@ def init_db():
             "smtp_password": "",
             "alert_check_enabled": "true",
             "company_name": "Smart Waste Management",
+            "detection_confidence_threshold": "0.30",
         }
 
         for key, value in default_settings.items():

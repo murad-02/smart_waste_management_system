@@ -11,11 +11,10 @@ class StatCard(QFrame):
         super().__init__(parent)
         self.color = color
         self.setProperty("class", "stat-card")
-        self.setMinimumSize(180, 130)
-        self.setMaximumHeight(150)
+        self.setMinimumSize(180, 140)
 
         main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(18, 18, 18, 18)
+        main_layout.setContentsMargins(18, 16, 18, 16)
         main_layout.setSpacing(14)
 
         # Left icon
@@ -32,29 +31,30 @@ class StatCard(QFrame):
 
         # Text column
         text_layout = QVBoxLayout()
-        text_layout.setSpacing(2)
+        text_layout.setSpacing(4)
+        text_layout.setContentsMargins(0, 0, 0, 0)
 
         # Title
         self.title_label = QLabel(title)
         self.title_label.setStyleSheet("color: #BFC5C9; font-size: 10pt;")
-        self.title_label.setAlignment(Qt.AlignLeft)
+        self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
-        # Value
+        # Value — reserve enough height for the 24pt bold number
         self.value_label = QLabel(value)
         self.value_label.setStyleSheet(
-            f"color: {color}; font-size: 28pt; font-weight: bold;"
+            f"color: {color}; font-size: 24pt; font-weight: bold;"
         )
-        self.value_label.setAlignment(Qt.AlignLeft)
+        self.value_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.value_label.setMinimumHeight(44)
 
         # Subtitle
         self.subtitle_label = QLabel(subtitle)
         self.subtitle_label.setStyleSheet("color: #8A9095; font-size: 9pt;")
-        self.subtitle_label.setAlignment(Qt.AlignLeft)
+        self.subtitle_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         text_layout.addWidget(self.title_label)
         text_layout.addWidget(self.value_label)
         text_layout.addWidget(self.subtitle_label)
-        text_layout.addStretch()
 
         main_layout.addLayout(text_layout, 1)
 
@@ -69,7 +69,7 @@ class StatCard(QFrame):
         if active:
             self.setProperty("class", "stat-card-alert")
             self.value_label.setStyleSheet(
-                "color: #E57373; font-size: 28pt; font-weight: bold;"
+                "color: #E57373; font-size: 24pt; font-weight: bold;"
             )
             if hasattr(self, "icon_label"):
                 self.icon_label.setStyleSheet(
@@ -79,7 +79,7 @@ class StatCard(QFrame):
         else:
             self.setProperty("class", "stat-card")
             self.value_label.setStyleSheet(
-                f"color: {self.color}; font-size: 28pt; font-weight: bold;"
+                f"color: {self.color}; font-size: 24pt; font-weight: bold;"
             )
             if hasattr(self, "icon_label"):
                 self.icon_label.setStyleSheet(
