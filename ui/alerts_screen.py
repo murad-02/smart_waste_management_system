@@ -162,7 +162,7 @@ class AlertsScreen(QWidget):
         r_header.setSectionResizeMode(5, QHeaderView.Fixed)        # Active
         r_header.setSectionResizeMode(6, QHeaderView.Fixed)        # Actions
         self.rules_table.setColumnWidth(0, 50)
-        self.rules_table.setColumnWidth(3, 80)
+        self.rules_table.setColumnWidth(3, 110)
         self.rules_table.setColumnWidth(5, 70)
         self.rules_table.setColumnWidth(6, 260)
         self.rules_table.setAlternatingRowColors(True)

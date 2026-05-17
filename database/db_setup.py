@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DATABASE_PATH
 from database.models import Base, User, AppSetting
+# Importing fleet_models registers Truck/Driver/Route/CollectionTrip/
+# MaintenanceRecord with Base.metadata so create_all() provisions them too.
+from database import fleet_models  # noqa: F401
 
 # Ensure database directory exists
 os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)

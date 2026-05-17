@@ -11,14 +11,23 @@ class Sidebar(QWidget):
     page_changed = pyqtSignal(str)
 
     # Menu items: (page_key, display_text, icon_char, required_role)
+    # A `None` page_key renders a non-clickable section heading.
     MENU_ITEMS = [
-        ("dashboard", "Dashboard", "\U0001f4ca", "operator"),      # 📊
-        ("detection", "Detection", "\U0001f4f7", "operator"),      # 📷
-        ("history", "Waste History", "\U0001f4cb", "operator"),    # 📋
-        ("users", "Users", "\U0001f464", "admin"),                 # 👤
-        ("alerts", "Alerts", "\u26a0\ufe0f", "supervisor"),        # ⚠️
-        ("reports", "Reports", "\U0001f4c8", "operator"),          # 📈
-        ("settings", "Settings", "\u2699\ufe0f", "admin"),         # ⚙️
+        ("dashboard", "Dashboard", "\U0001f4ca", "operator"),               # core
+        ("detection", "Detection", "\U0001f4f7", "operator"),
+        ("history", "Waste History", "\U0001f4cb", "operator"),
+        (None, "Fleet Operations", "", "operator"),                         # heading
+        ("fleet_dashboard", "Fleet Dashboard", "\U0001f4c8", "operator"),
+        ("trucks", "Trucks", "\U0001f69b", "operator"),
+        ("drivers", "Drivers", "\U0001f9d1", "supervisor"),
+        ("routes", "Routes", "\U0001f5fa", "operator"),
+        ("trips", "Trips", "\U0001f4cd", "operator"),
+        ("maintenance", "Maintenance", "\U0001f527", "supervisor"),
+        (None, "Administration", "", "operator"),                           # heading
+        ("users", "Users", "\U0001f464", "admin"),
+        ("alerts", "Alerts", "⚠️", "supervisor"),
+        ("reports", "Reports", "\U0001f4c8", "operator"),
+        ("settings", "Settings", "⚙️", "admin"),
     ]
 
     ROLE_HIERARCHY = {"admin": 3, "supervisor": 2, "operator": 1}
@@ -39,7 +48,7 @@ class Sidebar(QWidget):
         layout.setSpacing(0)
 
         # App logo / title
-        header = QLabel("  \u267b  SWMS")
+        header = QLabel("  ♻  SWMS")
         header.setStyleSheet(
             "color: #52796A; font-size: 18pt; font-weight: bold; "
             "padding: 24px 16px 4px 16px;"
@@ -47,7 +56,7 @@ class Sidebar(QWidget):
         layout.addWidget(header)
 
         # Version
-        version_label = QLabel("  v1.0.0")
+        version_label = QLabel("  v1.1.0 — Fleet Edition")
         version_label.setStyleSheet(
             "color: #8A9095; font-size: 9pt; padding-left: 16px; padding-bottom: 10px;"
         )
@@ -59,7 +68,7 @@ class Sidebar(QWidget):
         sep.setStyleSheet("background-color: #2E3338; margin: 0 14px;")
         layout.addWidget(sep)
 
-        layout.addSpacing(14)
+        layout.addSpacing(8)
 
         # Navigation buttons
         user_level = self.ROLE_HIERARCHY.get(self.user_role, 1)
@@ -69,7 +78,18 @@ class Sidebar(QWidget):
             if user_level < required_level:
                 continue
 
-            btn = QPushButton(f"  {icon}  {text}")
+            # Section heading
+            if page_key is None:
+                heading = QLabel(text.upper())
+                heading.setStyleSheet(
+                    "color: #6E767D; font-size: 9pt; font-weight: bold; "
+                    "letter-spacing: 1px; padding: 16px 18px 6px 18px;"
+                )
+                layout.addWidget(heading)
+                continue
+
+            label_text = f"  {icon}  {text}" if icon else f"  {text}"
+            btn = QPushButton(label_text)
             btn.setProperty("class", "sidebar-btn")
             btn.setCursor(Qt.PointingHandCursor)
             btn.clicked.connect(lambda checked, key=page_key: self._on_click(key))

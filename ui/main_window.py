@@ -16,6 +16,12 @@ from ui.users_screen import UsersScreen
 from ui.alerts_screen import AlertsScreen
 from ui.reports_screen import ReportsScreen
 from ui.settings_screen import SettingsScreen
+from ui.fleet.fleet_dashboard import FleetDashboardScreen
+from ui.fleet.trucks_screen import TrucksScreen
+from ui.fleet.drivers_screen import DriversScreen
+from ui.fleet.routes_screen import RoutesScreen
+from ui.fleet.trips_screen import TripsScreen
+from ui.fleet.maintenance_screen import MaintenanceScreen
 from core.log_manager import LogManager
 
 
@@ -71,10 +77,24 @@ class MainWindow(QMainWindow):
         self.reports_screen = ReportsScreen()
         self.settings_screen = SettingsScreen()
 
+        # Fleet module screens
+        self.fleet_dashboard_screen = FleetDashboardScreen()
+        self.trucks_screen = TrucksScreen()
+        self.drivers_screen = DriversScreen()
+        self.routes_screen = RoutesScreen()
+        self.trips_screen = TripsScreen()
+        self.maintenance_screen = MaintenanceScreen()
+
         self.screens = {
             "dashboard": self.dashboard_screen,
             "detection": self.detection_screen,
             "history": self.history_screen,
+            "fleet_dashboard": self.fleet_dashboard_screen,
+            "trucks": self.trucks_screen,
+            "drivers": self.drivers_screen,
+            "routes": self.routes_screen,
+            "trips": self.trips_screen,
+            "maintenance": self.maintenance_screen,
             "users": self.users_screen,
             "alerts": self.alerts_screen,
             "reports": self.reports_screen,
