@@ -31,7 +31,7 @@ class ReportsScreen(QWidget):
 
         # Header
         header = QLabel("Reports")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #0F172A;")
         layout.addWidget(header)
 
         # Generate report section — card style
@@ -42,7 +42,7 @@ class ReportsScreen(QWidget):
         gen_layout.setSpacing(12)
 
         type_label = QLabel("Report Type:")
-        type_label.setStyleSheet("color: #BFC5C9;")
+        type_label.setStyleSheet("color: #64748B;")
         gen_layout.addWidget(type_label)
         self.type_combo = QComboBox()
         self.type_combo.addItem("Summary", "summary")
@@ -51,7 +51,7 @@ class ReportsScreen(QWidget):
         gen_layout.addWidget(self.type_combo)
 
         from_label = QLabel("From:")
-        from_label.setStyleSheet("color: #BFC5C9;")
+        from_label.setStyleSheet("color: #64748B;")
         gen_layout.addWidget(from_label)
         self.date_from = QDateEdit()
         self.date_from.setDate(QDate.currentDate().addDays(-30))
@@ -59,7 +59,7 @@ class ReportsScreen(QWidget):
         gen_layout.addWidget(self.date_from)
 
         to_label = QLabel("To:")
-        to_label.setStyleSheet("color: #BFC5C9;")
+        to_label.setStyleSheet("color: #64748B;")
         gen_layout.addWidget(to_label)
         self.date_to = QDateEdit()
         self.date_to.setDate(QDate.currentDate())
@@ -76,7 +76,7 @@ class ReportsScreen(QWidget):
 
         # Reports history table
         table_label = QLabel("Generated Reports")
-        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #52796A;")
+        table_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #7C3AED;")
         layout.addWidget(table_label)
 
         self.table = QTableWidget()
@@ -128,7 +128,7 @@ class ReportsScreen(QWidget):
             open_btn.setCursor(Qt.PointingHandCursor)
             open_btn.setFixedHeight(30)
             open_btn.setStyleSheet(
-                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
                 "border-radius: 4px; padding: 2px 14px; font-size: 10pt; min-height: 0px;"
             )
             open_btn.clicked.connect(lambda _, r=report: self._open_report(r.file_path))
@@ -137,7 +137,7 @@ class ReportsScreen(QWidget):
             delete_btn.setCursor(Qt.PointingHandCursor)
             delete_btn.setFixedSize(34, 30)
             delete_btn.setStyleSheet(
-                "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                "background-color: #EF4444; color: #FFFFFF; border: none; border-radius: 4px; "
                 "font-weight: bold; padding: 0px; font-size: 11pt; min-height: 0px;"
             )
             delete_btn.clicked.connect(lambda _, r=report: self._delete_report(r.id))

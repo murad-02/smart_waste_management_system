@@ -186,8 +186,17 @@ def _draw_annotations(image, detections):
 
 
 def _build_bin_detections(bin_results, model_names, fill_dets, image_shape):
-    """Filter bin model results to bin class and enrich each with a fill level."""
+    """Filter bin model results to bin class and enrich each with a fill level.
+
+    If the underlying model run was a tracker (model.track), each detection will
+    include a stable `track_id` across frames — used by callers to count *unique*
+    bins instead of summing per-frame detections.
+    """
     detections = []
+    has_ids = (
+        getattr(bin_results, "boxes", None) is not None
+        and getattr(bin_results.boxes, "id", None) is not None
+    )
     for box in bin_results.boxes:
         cls_id = int(box.cls[0])
         category = model_names[cls_id]
@@ -195,6 +204,12 @@ def _build_bin_detections(bin_results, model_names, fill_dets, image_shape):
             continue
         bbox = box.xyxy[0].tolist()
         fill_level, fill_src, fill_conf = _assign_fill_level(bbox, fill_dets, image_shape)
+        track_id = None
+        if has_ids and box.id is not None:
+            try:
+                track_id = int(box.id[0])
+            except (TypeError, ValueError, IndexError):
+                track_id = None
         detections.append({
             "category": category,
             "confidence": float(box.conf[0]),
@@ -202,6 +217,7 @@ def _build_bin_detections(bin_results, model_names, fill_dets, image_shape):
             "fill_level": fill_level,
             "fill_source": fill_src,
             "fill_confidence": fill_conf,
+            "track_id": track_id,
         })
     return detections
 
@@ -351,6 +367,17 @@ class DetectionEngine:
         ]
 
         frame_index = 0
+        # Use YOLO's built-in tracker so each physical bin gets a stable id across
+        # frames. Callers can then count unique track_ids instead of summing per-frame
+        # detections (which would inflate the count to ~frames_seen * bins_in_view).
+        track_kwargs = {
+            "conf": conf,
+            "persist": True,
+            "verbose": False,
+            "tracker": "bytetrack.yaml",
+        }
+        if bin_class_indices:
+            track_kwargs["classes"] = bin_class_indices
         try:
             while True:
                 if stop_flag is not None and stop_flag():
@@ -364,12 +391,17 @@ class DetectionEngine:
                 if frame_stride > 1 and (frame_index % frame_stride) != 0:
                     continue
 
-                if bin_class_indices:
-                    bin_results = model.predict(
-                        frame, conf=conf, classes=bin_class_indices, verbose=False
-                    )
-                else:
-                    bin_results = model.predict(frame, conf=conf, verbose=False)
+                try:
+                    bin_results = model.track(frame, **track_kwargs)
+                except Exception:
+                    # Tracker unavailable → fall back to plain prediction.
+                    # track_id will be None and the UI will fall back to bbox-IoU dedup.
+                    if bin_class_indices:
+                        bin_results = model.predict(
+                            frame, conf=conf, classes=bin_class_indices, verbose=False
+                        )
+                    else:
+                        bin_results = model.predict(frame, conf=conf, verbose=False)
 
                 fill_dets = _run_fill_model(frame, conf=fill_conf)
                 detections = _build_bin_detections(

@@ -14,11 +14,11 @@ from ui.widgets.chart_widget import ChartWidget
 # Ordered fill-level mapping with semantic colors (empty → overflowing).
 FILL_LEVEL_ORDER = ["empty", "half", "almost_full", "full", "overflowing"]
 FILL_LEVEL_COLORS = {
-    "empty":       "#52796A",
-    "half":        "#BAC5AC",
-    "almost_full": "#FFC107",
-    "full":        "#E57373",
-    "overflowing": "#B71C1C",
+    "empty":       "#10B981",
+    "half":        "#A78BFA",
+    "almost_full": "#F59E0B",
+    "full":        "#EF4444",
+    "overflowing": "#B91C1C",
 }
 
 
@@ -81,10 +81,10 @@ class DashboardScreen(QWidget):
         title_col.setSpacing(2)
 
         header = QLabel("Dashboard")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #0F172A;")
 
         self.subtitle = QLabel("Overview of waste management operations")
-        self.subtitle.setStyleSheet("color: #BFC5C9; font-size: 11pt;")
+        self.subtitle.setStyleSheet("color: #64748B; font-size: 11pt;")
 
         title_col.addWidget(header)
         title_col.addWidget(self.subtitle)
@@ -93,14 +93,14 @@ class DashboardScreen(QWidget):
         header_row.addStretch()
 
         self.last_updated_label = QLabel("Last updated: —")
-        self.last_updated_label.setStyleSheet("color: #8A9095; font-size: 10pt;")
+        self.last_updated_label.setStyleSheet("color: #94A3B8; font-size: 10pt;")
         header_row.addWidget(self.last_updated_label)
 
         self.refresh_btn = QPushButton("↻  Refresh")
         self.refresh_btn.setCursor(Qt.PointingHandCursor)
         self.refresh_btn.setFixedHeight(34)
         self.refresh_btn.setStyleSheet(
-            "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+            "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
             "border-radius: 6px; padding: 4px 14px; font-size: 10pt; min-height: 0px;"
         )
         self.refresh_btn.clicked.connect(self.refresh_data)
@@ -113,16 +113,16 @@ class DashboardScreen(QWidget):
         row.setSpacing(16)
 
         self.card_total = StatCard(
-            "Total Detections", "0", "All time", "#52796A", "\U0001f4e6"
+            "Total Detections", "0", "All time", "#7C3AED", "\U0001f4e6"
         )
         self.card_today = StatCard(
-            "Today's Detections", "0", "Since midnight", "#FFC107", "\U0001f4c5"
+            "Today's Detections", "0", "Since midnight", "#F59E0B", "\U0001f4c5"
         )
         self.card_pending = StatCard(
-            "Pending Verifications", "0", "Awaiting review", "#64B5F6", "✅"
+            "Pending Verifications", "0", "Awaiting review", "#3B82F6", "✅"
         )
         self.card_alerts = StatCard(
-            "Active Alerts", "0", "Unacknowledged", "#E57373", "\U0001f514"
+            "Active Alerts", "0", "Unacknowledged", "#EF4444", "\U0001f514"
         )
 
         row.addWidget(self.card_total)
@@ -160,7 +160,7 @@ class DashboardScreen(QWidget):
         self.fill_empty_label = QLabel(
             "No detections yet — run a detection to see the fill-level breakdown."
         )
-        self.fill_empty_label.setStyleSheet("color: #8A9095; font-size: 11pt;")
+        self.fill_empty_label.setStyleSheet("color: #94A3B8; font-size: 11pt;")
         self.fill_empty_label.setAlignment(Qt.AlignCenter)
         self.fill_empty_label.setWordWrap(True)
         self.fill_empty_label.hide()
@@ -187,7 +187,7 @@ class DashboardScreen(QWidget):
         # Level name
         name_label = QLabel(name)
         name_label.setStyleSheet(
-            "color: #E5E5E5; font-size: 12pt; font-weight: 500; background: transparent;"
+            "color: #0F172A; font-size: 12pt; font-weight: 500; background: transparent;"
         )
         h.addWidget(name_label)
 
@@ -196,7 +196,7 @@ class DashboardScreen(QWidget):
         # Count + percentage, right-aligned
         count_label = QLabel(f"{count:,}")
         count_label.setStyleSheet(
-            "color: #E5E5E5; font-size: 13pt; font-weight: bold; background: transparent;"
+            "color: #0F172A; font-size: 13pt; font-weight: bold; background: transparent;"
         )
         count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         h.addWidget(count_label)
@@ -204,7 +204,7 @@ class DashboardScreen(QWidget):
         pct_label = QLabel(f"({pct:.0f}%)")
         pct_label.setFixedWidth(56)
         pct_label.setStyleSheet(
-            "color: #BFC5C9; font-size: 11pt; background: transparent;"
+            "color: #64748B; font-size: 11pt; background: transparent;"
         )
         pct_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         h.addWidget(pct_label)
@@ -232,7 +232,7 @@ class DashboardScreen(QWidget):
         self.bar_chart.setMinimumHeight(260)
         frame_layout.addWidget(self.bar_chart)
         self.bar_empty_label = QLabel("No data for the last 7 days.")
-        self.bar_empty_label.setStyleSheet("color: #8A9095; font-size: 11pt;")
+        self.bar_empty_label.setStyleSheet("color: #94A3B8; font-size: 11pt;")
         self.bar_empty_label.setAlignment(Qt.AlignCenter)
         self.bar_empty_label.hide()
         frame_layout.addWidget(self.bar_empty_label)
@@ -243,15 +243,15 @@ class DashboardScreen(QWidget):
 
         self.status_rows = {}
         for key, label, color in [
-            ("pending",  "Pending",  "#FFC107"),
-            ("verified", "Verified", "#4CAF50"),
-            ("rejected", "Rejected", "#E57373"),
+            ("pending",  "Pending",  "#F59E0B"),
+            ("verified", "Verified", "#10B981"),
+            ("rejected", "Rejected", "#EF4444"),
         ]:
             row = QHBoxLayout()
             dot = QLabel("●")
             dot.setStyleSheet(f"color: {color}; font-size: 14pt;")
             name = QLabel(label)
-            name.setStyleSheet("color: #E5E5E5; font-size: 12pt;")
+            name.setStyleSheet("color: #0F172A; font-size: 12pt;")
             count_label = QLabel("0")
             count_label.setStyleSheet(
                 f"color: {color}; font-size: 14pt; font-weight: bold;"
@@ -266,21 +266,21 @@ class DashboardScreen(QWidget):
 
         sep = QFrame()
         sep.setFixedHeight(1)
-        sep.setStyleSheet("background-color: #2E3338;")
+        sep.setStyleSheet("background-color: #E5E7EB;")
         frame_layout.addSpacing(8)
         frame_layout.addWidget(sep)
         frame_layout.addSpacing(8)
 
         self.avg_conf_label = QLabel("Avg Confidence: —")
-        self.avg_conf_label.setStyleSheet("color: #BFC5C9; font-size: 11pt;")
+        self.avg_conf_label.setStyleSheet("color: #64748B; font-size: 11pt;")
         frame_layout.addWidget(self.avg_conf_label)
 
         self.last_detection_label = QLabel("Last Detection: —")
-        self.last_detection_label.setStyleSheet("color: #BFC5C9; font-size: 11pt;")
+        self.last_detection_label.setStyleSheet("color: #64748B; font-size: 11pt;")
         frame_layout.addWidget(self.last_detection_label)
 
         self.week_count_label = QLabel("This Week: 0 detection(s)")
-        self.week_count_label.setStyleSheet("color: #BFC5C9; font-size: 11pt;")
+        self.week_count_label.setStyleSheet("color: #64748B; font-size: 11pt;")
         frame_layout.addWidget(self.week_count_label)
 
         frame_layout.addStretch()
@@ -294,7 +294,7 @@ class DashboardScreen(QWidget):
         self.trend_chart.setMinimumHeight(220)
         frame_layout.addWidget(self.trend_chart)
         self.trend_empty_label = QLabel("No data for the last 30 days.")
-        self.trend_empty_label.setStyleSheet("color: #8A9095; font-size: 11pt;")
+        self.trend_empty_label.setStyleSheet("color: #94A3B8; font-size: 11pt;")
         self.trend_empty_label.setAlignment(Qt.AlignCenter)
         self.trend_empty_label.hide()
         frame_layout.addWidget(self.trend_empty_label)
@@ -303,7 +303,7 @@ class DashboardScreen(QWidget):
     def _build_empty_state(self):
         frame = QFrame()
         frame.setStyleSheet(
-            "background-color: #222629; border: 1px dashed #3A3F44; border-radius: 12px;"
+            "background-color: #FFFFFF; border: 1px dashed #D1D5DB; border-radius: 12px;"
         )
         v = QVBoxLayout(frame)
         v.setContentsMargins(28, 24, 28, 24)
@@ -319,7 +319,7 @@ class DashboardScreen(QWidget):
         )
         msg.setWordWrap(True)
         msg.setAlignment(Qt.AlignCenter)
-        msg.setStyleSheet("color: #BFC5C9; font-size: 11pt; background: transparent;")
+        msg.setStyleSheet("color: #64748B; font-size: 11pt; background: transparent;")
 
         v.addWidget(icon)
         v.addWidget(msg)
@@ -331,15 +331,15 @@ class DashboardScreen(QWidget):
         frame = QFrame()
         frame.setProperty("class", "chart-frame")
         frame.setStyleSheet(
-            "QFrame[class=\"chart-frame\"] { background-color: #222629; "
-            "border: 1px solid #2E3338; border-radius: 12px; }"
+            "QFrame[class=\"chart-frame\"] { background-color: #FFFFFF; "
+            "border: 1px solid #E5E7EB; border-radius: 12px; }"
         )
         v = QVBoxLayout(frame)
         v.setContentsMargins(20, 16, 20, 16)
         v.setSpacing(8)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #E5E5E5;")
+        title_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #0F172A;")
         v.addWidget(title_label)
         return frame, v
 
@@ -415,7 +415,7 @@ class DashboardScreen(QWidget):
         labels = [_pretty_level(lvl) for lvl, _ in ordered]
         values = [count for _, count in ordered]
         color_map = {
-            _pretty_level(lvl): FILL_LEVEL_COLORS.get(lvl, "#64B5F6")
+            _pretty_level(lvl): FILL_LEVEL_COLORS.get(lvl, "#3B82F6")
             for lvl, _ in ordered
         }
 
@@ -432,7 +432,7 @@ class DashboardScreen(QWidget):
         insert_at = max(0, self.fill_legend_layout.count() - 1)
         for lvl, count in ordered:
             pct = (count / total) * 100.0
-            color = FILL_LEVEL_COLORS.get(lvl, "#64B5F6")
+            color = FILL_LEVEL_COLORS.get(lvl, "#3B82F6")
             row = self._make_legend_row(color, _pretty_level(lvl), count, pct)
             self.fill_legend_layout.insertWidget(insert_at, row)
             self._legend_rows.append(row)

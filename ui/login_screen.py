@@ -37,15 +37,15 @@ class LoginScreen(QWidget):
         icon_label = QLabel("\u267b")
         icon_label.setFont(QFont("Segoe UI Emoji", 36))
         icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setStyleSheet("background: transparent; color: #52796A;")
+        icon_label.setStyleSheet("background: transparent; color: #7C3AED;")
 
         title = QLabel("Smart Waste Management")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #52796A;")
+        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #7C3AED;")
 
         subtitle = QLabel("Sign in to continue")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("font-size: 10pt; color: #BFC5C9;")
+        subtitle.setStyleSheet("font-size: 10pt; color: #64748B;")
 
         layout.addWidget(icon_label)
         layout.addWidget(title)
@@ -54,7 +54,7 @@ class LoginScreen(QWidget):
 
         # Username
         username_label = QLabel("Username")
-        username_label.setStyleSheet("font-size: 10pt; color: #BFC5C9;")
+        username_label.setStyleSheet("font-size: 10pt; color: #64748B;")
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Enter your username")
         self.username_input.setMinimumHeight(42)
@@ -62,7 +62,7 @@ class LoginScreen(QWidget):
 
         # Password
         password_label = QLabel("Password")
-        password_label.setStyleSheet("font-size: 10pt; color: #BFC5C9;")
+        password_label.setStyleSheet("font-size: 10pt; color: #64748B;")
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter your password")
         self.password_input.setEchoMode(QLineEdit.Password)
@@ -72,7 +72,7 @@ class LoginScreen(QWidget):
         # Error message
         self.error_label = QLabel("")
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: #E57373; font-size: 10pt;")
+        self.error_label.setStyleSheet("color: #EF4444; font-size: 10pt;")
         self.error_label.hide()
 
         # Login button

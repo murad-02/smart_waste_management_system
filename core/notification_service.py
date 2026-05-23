@@ -98,18 +98,25 @@ class NotificationService:
             return False, f"Unexpected error: {e}"
 
     def send_bin_full_alert(self, alert, rule, count: int = 0) -> bool:
-        """Send a formatted bin full alert email."""
+        """Send a formatted fill-level alert email (legacy helper).
+
+        New code uses AlertManager which builds the body itself and calls
+        ``send_email`` directly; this remains for backwards compatibility.
+        """
         if not rule.notify_email:
             return False
 
+        fill_disp = str(rule.category or "").replace("_", " ").title() or "—"
+        when = alert.triggered_at or datetime.utcnow()
         subject = f"[SWMS ALERT] {rule.rule_name} — {alert.severity}"
         body = (
             f"Alert Details:\n"
-            f"- Category: {rule.category}\n"
+            f"- Rule: {rule.rule_name}\n"
+            f"- Fill Level: {fill_disp}\n"
             f"- Current Count: {count} / Threshold: {rule.threshold_value}\n"
             f"- Period: {rule.period}\n"
             f"- Severity: {alert.severity}\n"
-            f"- Time: {alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S') if alert.triggered_at else datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"- Time: {when.strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"\nPlease take immediate action.\n"
             f"\n— Smart Waste Management System"
         )

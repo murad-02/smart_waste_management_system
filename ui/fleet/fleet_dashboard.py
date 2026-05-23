@@ -66,23 +66,23 @@ class FleetDashboardScreen(QWidget):
         title_col = QVBoxLayout()
         title_col.setSpacing(2)
         title = QLabel("Fleet Dashboard")
-        title.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
+        title.setStyleSheet("font-size: 20pt; font-weight: bold; color: #0F172A;")
         subtitle = QLabel("Operational overview — trucks, trips, maintenance")
-        subtitle.setStyleSheet("color: #BFC5C9; font-size: 11pt;")
+        subtitle.setStyleSheet("color: #64748B; font-size: 11pt;")
         title_col.addWidget(title)
         title_col.addWidget(subtitle)
         row.addLayout(title_col)
         row.addStretch()
 
         self.last_updated_label = QLabel("Last updated: —")
-        self.last_updated_label.setStyleSheet("color: #8A9095; font-size: 10pt;")
+        self.last_updated_label.setStyleSheet("color: #94A3B8; font-size: 10pt;")
         row.addWidget(self.last_updated_label)
 
         refresh = QPushButton("↻  Refresh")
         refresh.setCursor(Qt.PointingHandCursor)
         refresh.setFixedHeight(34)
         refresh.setStyleSheet(
-            "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+            "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
             "border-radius: 6px; padding: 4px 14px; font-size: 10pt; min-height: 0px;"
         )
         refresh.clicked.connect(self.refresh_data)
@@ -93,15 +93,15 @@ class FleetDashboardScreen(QWidget):
         row = QHBoxLayout()
         row.setSpacing(16)
         self.card_total = StatCard("Total Trucks", "0", "Active fleet",
-                                   "#52796A", "🚛")
+                                   "#7C3AED", "🚛")
         self.card_active = StatCard("On Route / Available", "0", "Operational",
-                                    "#4CAF50", "✅")
+                                    "#10B981", "✅")
         self.card_maint = StatCard("In Maintenance", "0", "Service bay",
-                                   "#FFC107", "🔧")
+                                   "#F59E0B", "🔧")
         self.card_trips = StatCard("Trips Today", "0", "Scheduled + active",
-                                   "#64B5F6", "📋")
+                                   "#3B82F6", "📋")
         self.card_due = StatCard("Maintenance Due", "0", "Next 14 days",
-                                 "#E57373", "🛎️")
+                                 "#EF4444", "🛎️")
 
         for card in (self.card_total, self.card_active, self.card_maint,
                      self.card_trips, self.card_due):
@@ -130,7 +130,7 @@ class FleetDashboardScreen(QWidget):
         body.addWidget(self.util_chart)
         self.util_empty = QLabel("No utilisation data yet.")
         self.util_empty.setAlignment(Qt.AlignCenter)
-        self.util_empty.setStyleSheet("color: #8A9095; font-size: 11pt;")
+        self.util_empty.setStyleSheet("color: #94A3B8; font-size: 11pt;")
         self.util_empty.hide()
         body.addWidget(self.util_empty)
         return frame
@@ -142,7 +142,7 @@ class FleetDashboardScreen(QWidget):
         body.addWidget(self.maint_chart)
         self.maint_summary_label = QLabel("Total: $0.00 over 0 records")
         self.maint_summary_label.setStyleSheet(
-            "color: #BFC5C9; font-size: 11pt; padding-top: 4px;"
+            "color: #64748B; font-size: 11pt; padding-top: 4px;"
         )
         body.addWidget(self.maint_summary_label)
         return frame
@@ -151,7 +151,7 @@ class FleetDashboardScreen(QWidget):
         frame, body = self._panel("Upcoming Maintenance Alerts")
         self.alerts_label = QLabel("Loading…")
         self.alerts_label.setWordWrap(True)
-        self.alerts_label.setStyleSheet("color: #E5E5E5; font-size: 11pt;")
+        self.alerts_label.setStyleSheet("color: #0F172A; font-size: 11pt;")
         body.addWidget(self.alerts_label)
         return frame
 
@@ -159,14 +159,14 @@ class FleetDashboardScreen(QWidget):
     def _panel(title: str):
         frame = QFrame()
         frame.setStyleSheet(
-            "QFrame { background-color: #222629; border: 1px solid #2E3338;"
+            "QFrame { background-color: #FFFFFF; border: 1px solid #E5E7EB;"
             " border-radius: 12px; }"
         )
         v = QVBoxLayout(frame)
         v.setContentsMargins(20, 16, 20, 16)
         v.setSpacing(8)
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #E5E5E5;")
+        title_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #0F172A;")
         v.addWidget(title_label)
         return frame, v
 

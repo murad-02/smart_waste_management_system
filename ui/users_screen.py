@@ -62,7 +62,7 @@ class UserDialog(QDialog):
 
         if self.user:
             note = QLabel("Leave password blank to keep current password")
-            note.setStyleSheet("color: #BFC5C9; font-size: 9pt;")
+            note.setStyleSheet("color: #64748B; font-size: 9pt;")
             layout.addRow("", note)
 
         btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -84,9 +84,9 @@ class UsersScreen(QWidget):
     """Admin screen for managing users with role badges."""
 
     ROLE_BADGE_COLORS = {
-        "admin": ("#4CAF50", "#E5E5E5"),
-        "supervisor": ("#64B5F6", "#1A1D1F"),
-        "operator": ("#BFC5C9", "#1A1D1F"),
+        "admin": ("#D1FAE5", "#047857"),
+        "supervisor": ("#DBEAFE", "#1D4ED8"),
+        "operator": ("#F1F5F9", "#475569"),
     }
 
     def __init__(self, current_user=None, parent=None):
@@ -104,7 +104,7 @@ class UsersScreen(QWidget):
         # Header
         header_layout = QHBoxLayout()
         header = QLabel("User Management")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #0F172A;")
         header_layout.addWidget(header)
         header_layout.addStretch()
 
@@ -154,7 +154,7 @@ class UsersScreen(QWidget):
 
             # Role badge — colored cell
             role_item = QTableWidgetItem(user.role.capitalize())
-            role_colors = self.ROLE_BADGE_COLORS.get(user.role, ("#BFC5C9", "#1A1D1F"))
+            role_colors = self.ROLE_BADGE_COLORS.get(user.role, ("#64748B", "#F8FAFC"))
             role_item.setBackground(QColor(role_colors[0]))
             role_item.setForeground(QColor(role_colors[1]))
             self.table.setItem(row, 4, role_item)
@@ -163,11 +163,11 @@ class UsersScreen(QWidget):
             status_text = "Active" if user.is_active else "Inactive"
             status_item = QTableWidgetItem(status_text)
             if user.is_active:
-                status_item.setBackground(QColor("#4CAF50"))
-                status_item.setForeground(QColor("#E5E5E5"))
+                status_item.setBackground(QColor("#D1FAE5"))
+                status_item.setForeground(QColor("#047857"))
             else:
-                status_item.setBackground(QColor("#E57373"))
-                status_item.setForeground(QColor("#1A1D1F"))
+                status_item.setBackground(QColor("#FEE2E2"))
+                status_item.setForeground(QColor("#B91C1C"))
             self.table.setItem(row, 5, status_item)
 
             # Actions
@@ -181,7 +181,7 @@ class UsersScreen(QWidget):
             edit_btn.setCursor(Qt.PointingHandCursor)
             edit_btn.setFixedHeight(30)
             edit_btn.setStyleSheet(
-                "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+                "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
                 "border-radius: 4px; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
             )
             edit_btn.clicked.connect(lambda _, u=user: self._edit_user(u))
@@ -189,14 +189,14 @@ class UsersScreen(QWidget):
             if user.is_active:
                 toggle_btn = QPushButton("Deactivate")
                 toggle_btn.setStyleSheet(
-                    "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+                    "background-color: #EF4444; color: #FFFFFF; border: none; border-radius: 4px; "
                     "font-weight: bold; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
                 )
                 toggle_btn.clicked.connect(lambda _, u=user: self._deactivate_user(u.id))
             else:
                 toggle_btn = QPushButton("Activate")
                 toggle_btn.setStyleSheet(
-                    "background-color: #4CAF50; color: #E5E5E5; border: none; border-radius: 4px; "
+                    "background-color: #10B981; color: #FFFFFF; border: none; border-radius: 4px; "
                     "font-weight: bold; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
                 )
                 toggle_btn.clicked.connect(lambda _, u=user: self._activate_user(u.id))

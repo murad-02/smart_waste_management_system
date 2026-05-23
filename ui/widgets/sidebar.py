@@ -35,6 +35,8 @@ class Sidebar(QWidget):
     def __init__(self, user_role: str = "operator", parent=None):
         super().__init__(parent)
         self.setObjectName("sidebar")
+        # Required so the QSS background-color on a custom QWidget actually paints.
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setFixedWidth(230)
         self.user_role = user_role
         self.current_page = "dashboard"
@@ -50,22 +52,17 @@ class Sidebar(QWidget):
         # App logo / title
         header = QLabel("  ♻  SWMS")
         header.setStyleSheet(
-            "color: #52796A; font-size: 18pt; font-weight: bold; "
-            "padding: 24px 16px 4px 16px;"
+            "color: #FFFFFF; font-size: 18pt; font-weight: bold; "
+            "padding: 24px 16px 4px 16px; background: transparent;"
         )
         layout.addWidget(header)
 
-        # Version
-        version_label = QLabel("  v1.1.0 — Fleet Edition")
-        version_label.setStyleSheet(
-            "color: #8A9095; font-size: 9pt; padding-left: 16px; padding-bottom: 10px;"
-        )
-        layout.addWidget(version_label)
+  
 
         # Separator
         sep = QLabel()
         sep.setFixedHeight(1)
-        sep.setStyleSheet("background-color: #2E3338; margin: 0 14px;")
+        sep.setStyleSheet("background-color: rgba(255,255,255,0.1); margin: 0 14px;")
         layout.addWidget(sep)
 
         layout.addSpacing(8)
@@ -82,8 +79,9 @@ class Sidebar(QWidget):
             if page_key is None:
                 heading = QLabel(text.upper())
                 heading.setStyleSheet(
-                    "color: #6E767D; font-size: 9pt; font-weight: bold; "
-                    "letter-spacing: 1px; padding: 16px 18px 6px 18px;"
+                    "color: #8B8DC1; font-size: 9pt; font-weight: bold; "
+                    "letter-spacing: 1px; padding: 16px 18px 6px 18px; "
+                    "background: transparent;"
                 )
                 layout.addWidget(heading)
                 continue
@@ -101,7 +99,8 @@ class Sidebar(QWidget):
         # User info / logout at bottom
         self.user_label = QLabel("")
         self.user_label.setStyleSheet(
-            "color: #BFC5C9; font-size: 9pt; padding: 8px 16px;"
+            "color: #C7C9E6; font-size: 9pt; padding: 8px 16px; "
+            "background: transparent;"
         )
         self.user_label.setWordWrap(True)
         layout.addWidget(self.user_label)
@@ -110,8 +109,12 @@ class Sidebar(QWidget):
         self.logout_btn.setProperty("class", "sidebar-btn")
         self.logout_btn.setCursor(Qt.PointingHandCursor)
         self.logout_btn.setStyleSheet(
-            "color: #E57373; text-align: left; padding: 12px 16px; "
-            "margin: 2px 10px 18px 10px;"
+            "QPushButton { background-color: transparent; color: #FCA5A5; "
+            "border: none; border-radius: 10px; text-align: left; "
+            "padding: 12px 16px; font-size: 11pt; "
+            "margin: 2px 10px 18px 10px; } "
+            "QPushButton:hover { background-color: rgba(239, 68, 68, 0.15); "
+            "color: #FECACA; }"
         )
         layout.addWidget(self.logout_btn)
 

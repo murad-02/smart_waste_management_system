@@ -6,17 +6,17 @@ from matplotlib.figure import Figure
 
 
 class ChartWidget(FigureCanvas):
-    """Reusable Matplotlib chart widget with design-system dark theme."""
+    """Reusable Matplotlib chart widget with design-system light theme."""
 
-    BG_COLOR = "#222629"
-    TEXT_COLOR = "#E5E5E5"
-    MUTED_COLOR = "#BFC5C9"
-    GRID_COLOR = "#2E3338"
+    BG_COLOR = "#FFFFFF"
+    TEXT_COLOR = "#0F172A"
+    MUTED_COLOR = "#64748B"
+    GRID_COLOR = "#E5E7EB"
 
     # Design system: primary accent, then supporting colors
     COLORS = [
-        "#52796A", "#FFC107", "#64B5F6", "#E57373",
-        "#BAC5AC", "#06b6d4", "#ec4899", "#f97316"
+        "#7C3AED", "#F59E0B", "#3B82F6", "#EF4444",
+        "#10B981", "#06B6D4", "#EC4899", "#F97316"
     ]
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -45,7 +45,7 @@ class ChartWidget(FigureCanvas):
         self._style_axes(ax)
 
         # Use accent yellow for bars
-        bars = ax.bar(categories, values, color="#FFC107", width=0.6,
+        bars = ax.bar(categories, values, color="#F59E0B", width=0.6,
                       edgecolor="none", alpha=0.9)
         ax.set_title(title, fontsize=12, fontweight="bold")
         ax.set_ylabel("Count", color=self.MUTED_COLOR)
@@ -78,7 +78,7 @@ class ChartWidget(FigureCanvas):
             wedgeprops={"edgecolor": self.BG_COLOR, "linewidth": 2}
         )
         for t in autotexts:
-            t.set_color("#E5E5E5")
+            t.set_color("#FFFFFF")
             t.set_fontsize(8)
             t.set_fontweight("bold")
 
@@ -132,7 +132,7 @@ class ChartWidget(FigureCanvas):
             },
         )
         for t in autotexts:
-            t.set_color("#1A1D1F")
+            t.set_color("#FFFFFF")
             t.set_fontsize(10)
             t.set_fontweight("bold")
 
@@ -161,11 +161,11 @@ class ChartWidget(FigureCanvas):
         self._style_axes(ax)
 
         ax.plot(
-            x_data, y_data, color="#52796A",
+            x_data, y_data, color="#7C3AED",
             marker="o", linewidth=2.5, markersize=4,
-            markerfacecolor="#52796A", markeredgecolor="#52796A"
+            markerfacecolor="#7C3AED", markeredgecolor="#7C3AED"
         )
-        ax.fill_between(x_data, y_data, alpha=0.10, color="#52796A")
+        ax.fill_between(x_data, y_data, alpha=0.10, color="#7C3AED")
         ax.set_title(title, fontsize=12, fontweight="bold")
         if xlabel:
             ax.set_xlabel(xlabel)

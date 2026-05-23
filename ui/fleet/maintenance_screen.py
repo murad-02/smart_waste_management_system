@@ -152,7 +152,7 @@ class MaintenanceScreen(QWidget):
     def _build_due_banner(self) -> QFrame:
         frame = QFrame()
         frame.setStyleSheet(
-            "QFrame { background-color: #2A2620; border: 1px solid #FFC107; "
+            "QFrame { background-color: #FEF3C7; border: 1px solid #F59E0B; "
             "border-radius: 8px; padding: 6px; }"
         )
         h = QHBoxLayout(frame)
@@ -161,7 +161,7 @@ class MaintenanceScreen(QWidget):
         icon.setStyleSheet("font-size: 14pt; background: transparent;")
         h.addWidget(icon)
         self.due_label = QLabel("Loading…")
-        self.due_label.setStyleSheet("color: #FFC107; font-size: 11pt; "
+        self.due_label.setStyleSheet("color: #B45309; font-size: 11pt; "
                                      "background: transparent;")
         h.addWidget(self.due_label)
         h.addStretch()
@@ -205,9 +205,9 @@ class MaintenanceScreen(QWidget):
                 str(r.next_service_date) if r.next_service_date else "—"
             )
             if r.next_service_date and r.next_service_date <= today:
-                next_item.setForeground(QColor("#E57373"))
+                next_item.setForeground(QColor("#B91C1C"))
             elif r.next_service_date and (r.next_service_date - today).days <= MAINTENANCE_DUE_DAYS:
-                next_item.setForeground(QColor("#FFC107"))
+                next_item.setForeground(QColor("#B45309"))
             self.table.setItem(row, 4, next_item)
 
             self.table.setItem(row, 5,

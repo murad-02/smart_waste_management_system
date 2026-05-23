@@ -39,7 +39,7 @@ class ActivityLogDialog(QDialog):
         outer.setSpacing(12)
 
         title = QLabel("Activity Logs")
-        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #E5E5E5;")
+        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #0F172A;")
         outer.addWidget(title)
 
         # Filters row
@@ -91,7 +91,7 @@ class ActivityLogDialog(QDialog):
         # Footer
         footer = QHBoxLayout()
         self.count_label = QLabel("")
-        self.count_label.setStyleSheet("color: #8A9095;")
+        self.count_label.setStyleSheet("color: #94A3B8;")
         footer.addWidget(self.count_label)
         footer.addStretch()
         close_btn = QPushButton("Close")
@@ -154,7 +154,7 @@ class SettingsScreen(QWidget):
 
         # Header
         header = QLabel("Settings")
-        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #E5E5E5;")
+        header.setStyleSheet("font-size: 20pt; font-weight: bold; color: #0F172A;")
         layout.addWidget(header)
 
         layout.addWidget(self._build_smtp_group())
@@ -255,7 +255,7 @@ class SettingsScreen(QWidget):
             "Lower values detect more bins but produce more false positives. "
             "Default is 0.30."
         )
-        hint.setStyleSheet("color: #8A9095; font-size: 9pt;")
+        hint.setStyleSheet("color: #94A3B8; font-size: 9pt;")
         hint.setWordWrap(True)
         form.addRow("", hint)
 
@@ -278,7 +278,7 @@ class SettingsScreen(QWidget):
         # Backup row
         backup_row = QHBoxLayout()
         backup_label = QLabel("Export a copy of the SQLite database to a file of your choice.")
-        backup_label.setStyleSheet("color: #BFC5C9;")
+        backup_label.setStyleSheet("color: #64748B;")
         backup_label.setWordWrap(True)
         backup_btn = QPushButton("Export Database Backup")
         backup_btn.setProperty("class", "accent")
@@ -291,7 +291,7 @@ class SettingsScreen(QWidget):
         # Logs row
         logs_row = QHBoxLayout()
         logs_label = QLabel("Browse activity logs (login, detection, settings changes, etc.).")
-        logs_label.setStyleSheet("color: #BFC5C9;")
+        logs_label.setStyleSheet("color: #64748B;")
         logs_label.setWordWrap(True)
         logs_btn = QPushButton("View Activity Logs")
         logs_btn.setProperty("class", "outline")

@@ -8,8 +8,8 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
 
-HEADER_STYLE = "font-size: 20pt; font-weight: bold; color: #E5E5E5;"
-SUBTLE_STYLE = "color: #BFC5C9; font-size: 11pt;"
+HEADER_STYLE = "font-size: 20pt; font-weight: bold; color: #0F172A;"
+SUBTLE_STYLE = "color: #64748B; font-size: 11pt;"
 
 
 def build_header(title: str, subtitle: str = ""):
@@ -42,7 +42,7 @@ def secondary_button(text: str) -> QPushButton:
     btn.setCursor(Qt.PointingHandCursor)
     btn.setFixedHeight(30)
     btn.setStyleSheet(
-        "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+        "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
         "border-radius: 4px; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
     )
     return btn
@@ -53,7 +53,7 @@ def danger_button(text: str) -> QPushButton:
     btn.setCursor(Qt.PointingHandCursor)
     btn.setFixedHeight(30)
     btn.setStyleSheet(
-        "background-color: #E57373; color: #1A1D1F; border: none; border-radius: 4px; "
+        "background-color: #EF4444; color: #FFFFFF; border: none; border-radius: 4px; "
         "font-weight: bold; padding: 2px 12px; font-size: 10pt; min-height: 0px;"
     )
     return btn
@@ -67,7 +67,7 @@ def filter_bar(parent_layout, *, search_placeholder: str = "Search…",
     """
     bar = QFrame()
     bar.setStyleSheet(
-        "QFrame { background-color: #222629; border: 1px solid #2E3338;"
+        "QFrame { background-color: #FFFFFF; border: 1px solid #E5E7EB;"
         " border-radius: 8px; padding: 4px; }"
     )
     layout = QHBoxLayout(bar)
@@ -77,8 +77,8 @@ def filter_bar(parent_layout, *, search_placeholder: str = "Search…",
     search = QLineEdit()
     search.setPlaceholderText(search_placeholder)
     search.setStyleSheet(
-        "QLineEdit { background-color: #1A1D1F; color: #E5E5E5; "
-        "border: 1px solid #3A3F44; border-radius: 4px; padding: 6px 10px; }"
+        "QLineEdit { background-color: #F8FAFC; color: #0F172A; "
+        "border: 1px solid #D1D5DB; border-radius: 4px; padding: 6px 10px; }"
     )
     layout.addWidget(search, 3)
 
@@ -99,7 +99,7 @@ def filter_bar(parent_layout, *, search_placeholder: str = "Search…",
 
 
 def colored_status_item(text: str, color_hex: str,
-                        text_color: str = "#1A1D1F") -> QTableWidgetItem:
+                        text_color: str = "#0F172A") -> QTableWidgetItem:
     item = QTableWidgetItem(text.replace("_", " ").title())
     item.setBackground(QColor(color_hex))
     item.setForeground(QColor(text_color))
@@ -107,28 +107,29 @@ def colored_status_item(text: str, color_hex: str,
     return item
 
 
-# Status → colour mapping shared across truck/driver/trip tables
+# Status → colour mapping shared across truck/driver/trip tables.
+# Soft pill palette: (background, text)
 STATUS_COLORS = {
     # Trucks
-    "available":       ("#4CAF50", "#E5E5E5"),
-    "on_route":        ("#64B5F6", "#1A1D1F"),
-    "maintenance":     ("#FFC107", "#1A1D1F"),
-    "out_of_service":  ("#E57373", "#1A1D1F"),
-    "inactive":        ("#8A9095", "#1A1D1F"),
+    "available":       ("#D1FAE5", "#047857"),
+    "on_route":        ("#DBEAFE", "#1D4ED8"),
+    "maintenance":     ("#FEF3C7", "#B45309"),
+    "out_of_service":  ("#FEE2E2", "#B91C1C"),
+    "inactive":        ("#F1F5F9", "#475569"),
     # Drivers
-    "on_duty":         ("#52796A", "#E5E5E5"),
-    "off_duty":        ("#BFC5C9", "#1A1D1F"),
-    "suspended":       ("#E57373", "#1A1D1F"),
+    "on_duty":         ("#EDE9FE", "#6D28D9"),
+    "off_duty":        ("#F1F5F9", "#475569"),
+    "suspended":       ("#FEE2E2", "#B91C1C"),
     # Routes
-    "active":          ("#4CAF50", "#E5E5E5"),
-    "draft":           ("#FFC107", "#1A1D1F"),
+    "active":          ("#D1FAE5", "#047857"),
+    "draft":           ("#FEF3C7", "#B45309"),
     # Trips
-    "scheduled":       ("#64B5F6", "#1A1D1F"),
-    "completed":       ("#4CAF50", "#E5E5E5"),
-    "cancelled":       ("#8A9095", "#1A1D1F"),
+    "scheduled":       ("#DBEAFE", "#1D4ED8"),
+    "completed":       ("#D1FAE5", "#047857"),
+    "cancelled":       ("#F1F5F9", "#475569"),
 }
 
 
 def status_item(status: str) -> QTableWidgetItem:
-    bg, fg = STATUS_COLORS.get(status, ("#BFC5C9", "#1A1D1F"))
+    bg, fg = STATUS_COLORS.get(status, ("#F1F5F9", "#475569"))
     return colored_status_item(status, bg, fg)

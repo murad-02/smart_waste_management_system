@@ -36,7 +36,12 @@ class DetectionWorker(QThread):
 
 
 class VideoDetectionWorker(QThread):
-    """Worker thread that streams YOLO detection over a video file or webcam (0)."""
+    """Worker thread that streams YOLO detection over a video file or webcam (0).
+
+    The final count emitted via ``finished_stream`` is the number of *unique*
+    bins seen during the stream (deduplicated by tracker id), not the sum of
+    per-frame detections.
+    """
     frame_ready = pyqtSignal(dict)
     finished_stream = pyqtSignal(int, str)
 
@@ -51,7 +56,7 @@ class VideoDetectionWorker(QThread):
         self._stop = True
 
     def run(self):
-        total_dets = 0
+        seen_ids = set()
         err = ""
         try:
             for payload in self.engine.detect_video_stream(
@@ -62,11 +67,14 @@ class VideoDetectionWorker(QThread):
                 if payload.get("error"):
                     err = payload["error"]
                     break
-                total_dets += len(payload.get("detections") or [])
+                for det in payload.get("detections") or []:
+                    tid = det.get("track_id")
+                    if tid is not None:
+                        seen_ids.add(tid)
                 self.frame_ready.emit(payload)
         except Exception as e:
             err = str(e)
-        self.finished_stream.emit(total_dets, err)
+        self.finished_stream.emit(len(seen_ids), err)
 
 
 # ---------------------------------------------------------------------------
@@ -89,12 +97,15 @@ class CameraTile(QFrame):
         self._video_worker = None
         self._image_worker = None
         self._total_bins = 0
+        # Tracker IDs of bins already counted in the current stream — used so
+        # the same physical bin is counted once, not per-frame.
+        self._seen_track_ids = set()
         self._last_pixmap = None
 
         self.setObjectName("cam-tile")
         self.setStyleSheet(
-            "#cam-tile { background-color: #0A0D10; border: 1px solid #2E3338; "
-            "border-radius: 8px; }"
+            "#cam-tile { background-color: #FFFFFF; border: 1px solid #E5E7EB; "
+            "border-radius: 12px; }"
         )
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setMinimumSize(420, 320)
@@ -111,7 +122,10 @@ class CameraTile(QFrame):
 
         # Header: CAM label · status dot · status text · live timestamp
         header = QFrame()
-        header.setStyleSheet("background-color: #11161A; border: none;")
+        header.setStyleSheet(
+            "background-color: #F8FAFC; border: none; "
+            "border-top-left-radius: 12px; border-top-right-radius: 12px;"
+        )
         header.setFixedHeight(34)
         h = QHBoxLayout(header)
         h.setContentsMargins(12, 4, 12, 4)
@@ -119,7 +133,7 @@ class CameraTile(QFrame):
 
         self.cam_label = QLabel(self.cam_name)
         self.cam_label.setStyleSheet(
-            "color: #E5E5E5; font-weight: bold; font-size: 11pt; "
+            "color: #0F172A; font-weight: bold; font-size: 11pt; "
             "background: transparent; letter-spacing: 1px;"
         )
         h.addWidget(self.cam_label)
@@ -132,7 +146,7 @@ class CameraTile(QFrame):
 
         self.status_label = QLabel("IDLE")
         self.status_label.setStyleSheet(
-            "color: #BFC5C9; font-size: 10pt; background: transparent; "
+            "color: #64748B; font-size: 10pt; background: transparent; "
             "font-weight: bold; letter-spacing: 1px;"
         )
         h.addWidget(self.status_label)
@@ -141,7 +155,7 @@ class CameraTile(QFrame):
 
         self.timestamp_label = QLabel("")
         self.timestamp_label.setStyleSheet(
-            "color: #BFC5C9; font-size: 10pt; background: transparent; "
+            "color: #64748B; font-size: 10pt; background: transparent; "
             "font-family: 'Consolas', 'Courier New', monospace;"
         )
         h.addWidget(self.timestamp_label)
@@ -152,7 +166,7 @@ class CameraTile(QFrame):
         self.preview = QLabel("NO SIGNAL\n\nClick Source to load a feed")
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setStyleSheet(
-            "background-color: #050708; color: #3A4045; font-size: 11pt; "
+            "background-color: #0F172A; color: #64748B; font-size: 11pt; "
             "letter-spacing: 1px; font-weight: bold;"
         )
         self.preview.setMinimumHeight(220)
@@ -161,7 +175,10 @@ class CameraTile(QFrame):
 
         # Footer: source name · bin badge · source button · start/stop
         footer = QFrame()
-        footer.setStyleSheet("background-color: #11161A; border: none;")
+        footer.setStyleSheet(
+            "background-color: #F8FAFC; border: none; "
+            "border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;"
+        )
         footer.setFixedHeight(48)
         f = QHBoxLayout(footer)
         f.setContentsMargins(12, 8, 12, 8)
@@ -169,14 +186,14 @@ class CameraTile(QFrame):
 
         self.source_label = QLabel("No source")
         self.source_label.setStyleSheet(
-            "color: #8A9095; font-size: 9pt; background: transparent;"
+            "color: #94A3B8; font-size: 9pt; background: transparent;"
         )
         f.addWidget(self.source_label)
         f.addStretch()
 
         self.bin_badge = QLabel("0 bins")
         self.bin_badge.setStyleSheet(
-            "background-color: #2A2F33; color: #BFC5C9; "
+            "background-color: #F1F5F9; color: #64748B; "
             "border-radius: 9px; padding: 3px 10px; font-size: 9pt;"
         )
         f.addWidget(self.bin_badge)
@@ -185,7 +202,7 @@ class CameraTile(QFrame):
         self.load_btn.setCursor(Qt.PointingHandCursor)
         self.load_btn.setFixedHeight(30)
         self.load_btn.setStyleSheet(
-            "background-color: #2A2F33; color: #E5E5E5; border: 1px solid #3A3F44; "
+            "background-color: #F1F5F9; color: #0F172A; border: 1px solid #D1D5DB; "
             "border-radius: 4px; padding: 2px 12px; font-size: 9pt; min-height: 0px;"
         )
         self.load_btn.clicked.connect(self._show_source_menu)
@@ -195,7 +212,7 @@ class CameraTile(QFrame):
         self.start_btn.setCursor(Qt.PointingHandCursor)
         self.start_btn.setFixedHeight(30)
         self.start_btn.setStyleSheet(
-            "background-color: #52796A; color: #E5E5E5; border: none; "
+            "background-color: #7C3AED; color: #FFFFFF; border: none; "
             "border-radius: 4px; padding: 2px 14px; font-size: 9pt; "
             "font-weight: bold; min-height: 0px;"
         )
@@ -263,7 +280,7 @@ class CameraTile(QFrame):
         self.start_btn.setEnabled(True)
         self._total_bins = 0
         self._update_badge()
-        self._set_status("READY", "#FFC107")
+        self._set_status("READY", "#F59E0B")
 
     # ---- Start / Stop ------------------------------------------------------
 
@@ -301,7 +318,7 @@ class CameraTile(QFrame):
             return
         self.start_btn.setEnabled(False)
         self.load_btn.setEnabled(False)
-        self._set_status("RUNNING", "#E57373")
+        self._set_status("RUNNING", "#EF4444")
         self._image_worker = DetectionWorker(
             self.engine, self.source_path, self.current_user.id
         )
@@ -313,7 +330,7 @@ class CameraTile(QFrame):
         self.load_btn.setEnabled(True)
         if results.get("error"):
             show_toast(self, f"{self.cam_name}: {results['error']}", "error")
-            self._set_status("ERROR", "#E57373")
+            self._set_status("ERROR", "#EF4444")
             return
         result_path = results.get("result_image_path")
         if result_path and os.path.isfile(result_path):
@@ -323,7 +340,7 @@ class CameraTile(QFrame):
         self._total_bins = count
         self._update_badge()
         self.bins_detected.emit(count)
-        self._set_status("DONE", "#4CAF50")
+        self._set_status("DONE", "#10B981")
         self.stream_ended.emit(count, "")
 
     def _run_video(self):
@@ -331,8 +348,9 @@ class CameraTile(QFrame):
             show_toast(self, "No user logged in.", "error")
             return
         self._total_bins = 0
+        self._seen_track_ids = set()
         self._update_badge()
-        self._set_status("LIVE", "#E57373")
+        self._set_status("LIVE", "#EF4444")
         self.start_btn.setText("⏹  Stop")
         self.load_btn.setEnabled(False)
         self._video_worker = VideoDetectionWorker(
@@ -351,17 +369,38 @@ class CameraTile(QFrame):
         qimg = QImage(img_rgb.data, w, h, ch * w, QImage.Format_RGB888)
         pix = QPixmap.fromImage(qimg.copy())
         self._set_preview_pixmap(pix)
-        n = len(payload.get("detections") or [])
-        self._total_bins += n
+
+        # Count each physical bin once: track_id from the YOLO tracker is the
+        # source of truth. If the tracker didn't assign an id (model.track
+        # unavailable or a transient miss), fall back to the per-frame visible
+        # count so the badge never lies — but don't accumulate.
+        detections = payload.get("detections") or []
+        new_ids = 0
+        untracked = 0
+        for det in detections:
+            tid = det.get("track_id")
+            if tid is None:
+                untracked += 1
+                continue
+            if tid not in self._seen_track_ids:
+                self._seen_track_ids.add(tid)
+                new_ids += 1
+
+        if self._seen_track_ids:
+            self._total_bins = len(self._seen_track_ids)
+        else:
+            # Pure-fallback path: show how many bins are visible *right now*.
+            self._total_bins = untracked
+
         self._update_badge()
-        if n:
-            self.bins_detected.emit(n)
+        if new_ids:
+            self.bins_detected.emit(new_ids)
 
     def _on_video_done(self, total, error):
         self.start_btn.setText("▶  Start")
         self.load_btn.setEnabled(True)
         if error:
-            self._set_status("ERROR", "#E57373")
+            self._set_status("ERROR", "#EF4444")
             show_toast(self, f"{self.cam_name}: {error}", "error")
         else:
             self._set_status("STOPPED", "#6E7378")
@@ -396,11 +435,11 @@ class CameraTile(QFrame):
 
 
 # ---------------------------------------------------------------------------
-# Detection screen — two-channel CCTV monitor
+# Detection screen — single-channel CCTV monitor
 # ---------------------------------------------------------------------------
 
 class DetectionScreen(QWidget):
-    """CCTV-style detection monitor with two independent camera tiles."""
+    """CCTV-style detection monitor with a single camera tile."""
 
     def __init__(self, current_user=None, parent=None):
         super().__init__(parent)
@@ -421,40 +460,38 @@ class DetectionScreen(QWidget):
         # Header row
         header_row = QHBoxLayout()
         title = QLabel("Surveillance Monitor")
-        title.setStyleSheet("font-size: 18pt; font-weight: bold; color: #E5E5E5;")
+        title.setStyleSheet("font-size: 18pt; font-weight: bold; color: #0F172A;")
         header_row.addWidget(title)
         header_row.addStretch()
 
         rec_label = QLabel("●  REC")
         rec_label.setStyleSheet(
-            "color: #E57373; font-size: 11pt; font-weight: bold; letter-spacing: 1px;"
+            "color: #EF4444; font-size: 11pt; font-weight: bold; letter-spacing: 1px;"
         )
         header_row.addWidget(rec_label)
         outer.addLayout(header_row)
 
-        sub = QLabel("Two-channel CCTV monitor — YOLO bin detection + fill-level classification.")
-        sub.setStyleSheet("color: #8A9095; font-size: 10pt;")
+        sub = QLabel("Single-channel CCTV monitor — YOLO bin detection + fill-level classification.")
+        sub.setStyleSheet("color: #94A3B8; font-size: 10pt;")
         outer.addWidget(sub)
 
-        # Camera grid (two tiles side by side)
+        # Camera grid (single tile)
         grid = QHBoxLayout()
         grid.setSpacing(14)
 
         self.cam1 = CameraTile("CAM 01", self.engine)
-        self.cam2 = CameraTile("CAM 02", self.engine)
-        for t in (self.cam1, self.cam2):
-            t.bins_detected.connect(self._on_bins_detected)
-            t.stream_ended.connect(self._on_stream_ended)
-            self.tiles.append(t)
-            grid.addWidget(t)
+        self.cam1.bins_detected.connect(self._on_bins_detected)
+        self.cam1.stream_ended.connect(self._on_stream_ended)
+        self.tiles.append(self.cam1)
+        grid.addWidget(self.cam1)
         outer.addLayout(grid, 1)
 
         # Bottom status / control bar
         bottom = QFrame()
         bottom.setObjectName("status-bar")
         bottom.setStyleSheet(
-            "#status-bar { background-color: #11161A; "
-            "border: 1px solid #2E3338; border-radius: 8px; }"
+            "#status-bar { background-color: #FFFFFF; "
+            "border: 1px solid #E5E7EB; border-radius: 12px; }"
         )
         bottom.setFixedHeight(74)
         b = QHBoxLayout(bottom)
@@ -477,7 +514,7 @@ class DetectionScreen(QWidget):
         stop_all.setCursor(Qt.PointingHandCursor)
         stop_all.setFixedHeight(36)
         stop_all.setStyleSheet(
-            "background-color: #E57373; color: #1A1D1F; border: none; "
+            "background-color: #EF4444; color: #FFFFFF; border: none; "
             "border-radius: 6px; padding: 4px 16px; font-weight: bold; "
             "font-size: 10pt; min-height: 0px;"
         )
@@ -493,9 +530,9 @@ class DetectionScreen(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(2)
         t = QLabel(title.upper())
-        t.setStyleSheet("color: #8A9095; font-size: 9pt; letter-spacing: 1px;")
+        t.setStyleSheet("color: #94A3B8; font-size: 9pt; letter-spacing: 1px;")
         v = QLabel(value)
-        v.setStyleSheet("color: #E5E5E5; font-size: 16pt; font-weight: bold;")
+        v.setStyleSheet("color: #0F172A; font-size: 16pt; font-weight: bold;")
         layout.addWidget(t)
         layout.addWidget(v)
         return {"layout": layout, "title": t, "value": v}
