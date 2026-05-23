@@ -13,21 +13,21 @@ class Sidebar(QWidget):
     # Menu items: (page_key, display_text, icon_char, required_role)
     # A `None` page_key renders a non-clickable section heading.
     MENU_ITEMS = [
-        ("dashboard", "Dashboard", "\U0001f4ca", "operator"),               # core
-        ("detection", "Detection", "\U0001f4f7", "operator"),
-        ("history", "Waste History", "\U0001f4cb", "operator"),
-        (None, "Fleet Operations", "", "operator"),                         # heading
-        ("fleet_dashboard", "Fleet Dashboard", "\U0001f4c8", "operator"),
-        ("trucks", "Trucks", "\U0001f69b", "operator"),
-        ("drivers", "Drivers", "\U0001f9d1", "supervisor"),
-        ("routes", "Routes", "\U0001f5fa", "operator"),
-        ("trips", "Trips", "\U0001f4cd", "operator"),
-        ("maintenance", "Maintenance", "\U0001f527", "supervisor"),
-        (None, "Administration", "", "operator"),                           # heading
-        ("users", "Users", "\U0001f464", "admin"),
-        ("alerts", "Alerts", "⚠️", "supervisor"),
-        ("reports", "Reports", "\U0001f4c8", "operator"),
-        ("settings", "Settings", "⚙️", "admin"),
+        ("dashboard", "Dashboard", "", "operator"),                          # core
+        ("detection", "Detection", "", "operator"),
+        ("history", "Waste History", "", "operator"),
+        (None, "Fleet Operations", "", "operator"),                          # heading
+        ("fleet_dashboard", "Fleet Dashboard", "", "operator"),
+        ("trucks", "Trucks", "", "operator"),
+        ("drivers", "Drivers", "", "supervisor"),
+        ("routes", "Routes", "", "operator"),
+        ("trips", "Trips", "", "operator"),
+        ("maintenance", "Maintenance", "", "supervisor"),
+        (None, "Administration", "", "operator"),                            # heading
+        ("users", "Users", "", "admin"),
+        ("alerts", "Alerts", "", "supervisor"),
+        ("reports", "Reports", "", "operator"),
+        ("settings", "Settings", "", "admin"),
     ]
 
     ROLE_HIERARCHY = {"admin": 3, "supervisor": 2, "operator": 1}
@@ -105,13 +105,13 @@ class Sidebar(QWidget):
         self.user_label.setWordWrap(True)
         layout.addWidget(self.user_label)
 
-        self.logout_btn = QPushButton("  \U0001f6aa  Logout")
+        self.logout_btn = QPushButton("  Logout")
         self.logout_btn.setProperty("class", "sidebar-btn")
         self.logout_btn.setCursor(Qt.PointingHandCursor)
         self.logout_btn.setStyleSheet(
             "QPushButton { background-color: transparent; color: #FCA5A5; "
             "border: none; border-radius: 10px; text-align: left; "
-            "padding: 12px 16px; font-size: 11pt; "
+            "padding: 12px 16px; font-size: 11pt; font-weight: bold; "
             "margin: 2px 10px 18px 10px; } "
             "QPushButton:hover { background-color: rgba(239, 68, 68, 0.15); "
             "color: #FECACA; }"
@@ -137,4 +137,4 @@ class Sidebar(QWidget):
             btn.style().polish(btn)
 
     def set_user_info(self, full_name: str, role: str):
-        self.user_label.setText(f"\U0001f464 {full_name}\n    Role: {role.capitalize()}")
+        self.user_label.setText(f"{full_name}\n    Role: {role.capitalize()}")

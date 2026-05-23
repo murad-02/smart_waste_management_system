@@ -116,19 +116,29 @@ class AlertManager:
         finally:
             session.close()
 
-    def delete_rule(self, rule_id: int) -> bool:
-        """Delete an alert rule."""
+    def delete_rule(self, rule_id: int):
+        """Delete an alert rule and any alerts it produced.
+
+        Alerts hold a NOT NULL foreign key to the rule, so we must clear
+        them explicitly — the relationship has no cascade configured.
+
+        Returns (success, message). ``message`` is None on success.
+        """
         session = Session()
         try:
             rule = session.query(AlertRule).filter_by(id=rule_id).first()
             if not rule:
-                return False
+                return False, f"Rule #{rule_id} not found."
+
+            session.query(Alert).filter(Alert.rule_id == rule_id).delete(
+                synchronize_session=False
+            )
             session.delete(rule)
             session.commit()
-            return True
-        except Exception:
+            return True, None
+        except Exception as e:
             session.rollback()
-            return False
+            return False, f"Database error: {e}"
         finally:
             session.close()
 

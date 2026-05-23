@@ -430,6 +430,7 @@ QPushButton[class="sidebar-btn"] {
     text-align: left;
     padding: 12px 16px;
     font-size: 11pt;
+    font-weight: bold;
     margin: 2px 10px;
 }
 

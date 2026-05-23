@@ -431,15 +431,26 @@ class AlertsScreen(QWidget):
 
     def _delete_rule(self, rule_id):
         reply = QMessageBox.question(
-            self, "Confirm", f"Delete alert rule #{rule_id}?",
+            self, "Confirm",
+            f"Delete alert rule #{rule_id}?\n\n"
+            "Any triggered alerts produced by this rule will also be removed.",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
-        if reply == QMessageBox.Yes:
-            if self.alert_mgr.delete_rule(rule_id):
+        if reply != QMessageBox.Yes:
+            return
+
+        success, err = self.alert_mgr.delete_rule(rule_id)
+        if success:
+            if self.current_user:
                 self.log.log_activity(self.current_user.id, "rule_deleted",
                                       f"Deleted alert rule #{rule_id}")
-                show_toast(self, "Rule deleted.", "success")
-                self.refresh_data()
+            show_toast(self, "Rule deleted.", "success")
+            self.refresh_data()
+        else:
+            QMessageBox.warning(
+                self, "Delete Failed",
+                err or f"Could not delete rule #{rule_id}."
+            )
 
     def set_user(self, user):
         self.current_user = user
