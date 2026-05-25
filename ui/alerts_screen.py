@@ -61,8 +61,13 @@ class AlertRuleDialog(QDialog):
         layout.addRow("Threshold (bins):", self.threshold_spin)
 
         self.period_combo = QComboBox()
-        for period in ["daily", "weekly", "monthly"]:
+        for period in ["session", "daily", "weekly", "monthly"]:
             self.period_combo.addItem(period.capitalize(), period)
+        self.period_combo.setToolTip(
+            "Window the rule counts bins over.\n"
+            "Session: only bins seen since the last Reset Session — re-arms on reset.\n"
+            "Daily / Weekly / Monthly: rolling calendar windows."
+        )
         if self.rule:
             idx = self.period_combo.findData(self.rule.period)
             if idx >= 0:

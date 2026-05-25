@@ -8,8 +8,29 @@ from database.models import AlertRule, Alert, Detection
 from core.notification_service import NotificationService
 
 
+# Detection-session start time. Process-wide so every AlertManager instance
+# agrees on "the current session" — updated when the user clicks Reset Session
+# in the Detection screen via ``set_session_start``.
+_session_start = datetime.utcnow()
+
+
+def set_session_start(when: datetime = None) -> datetime:
+    """Mark a new detection session start. ``when`` defaults to now (UTC)."""
+    global _session_start
+    _session_start = when or datetime.utcnow()
+    return _session_start
+
+
+def get_session_start() -> datetime:
+    return _session_start
+
+
 def _period_start(now: datetime, period: str):
-    """Return the start of the current 'daily'/'weekly'/'monthly' window."""
+    """Return the start of the current period window.
+
+    Supported periods: 'daily', 'weekly', 'monthly', 'session'. 'session'
+    returns the current detection-session start time (see ``set_session_start``).
+    """
     if period == "daily":
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
     if period == "weekly":
@@ -17,6 +38,8 @@ def _period_start(now: datetime, period: str):
         return start.replace(hour=0, minute=0, second=0, microsecond=0)
     if period == "monthly":
         return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if period == "session":
+        return _session_start
     return None
 
 
@@ -191,12 +214,19 @@ class AlertManager:
                 if count < rule.threshold_value:
                     continue
 
-                # One alert per rule per day, regardless of how many detections
-                # come in afterwards.
-                today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                # Dedup window:
+                #   - 'session' rules fire once per session (so a reset re-arms
+                #     the rule even on the same day).
+                #   - All other rules fire once per day to avoid email spam.
+                if rule.period == "session":
+                    dedup_since = _session_start
+                else:
+                    dedup_since = now.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
                 existing = session.query(Alert).filter(
                     Alert.rule_id == rule.id,
-                    Alert.triggered_at >= today_start
+                    Alert.triggered_at >= dedup_since
                 ).first()
                 if existing:
                     continue

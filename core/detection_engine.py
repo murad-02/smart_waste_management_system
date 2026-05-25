@@ -132,8 +132,22 @@ def _run_fill_model(image, conf=0.25):
     return out
 
 
-def _assign_fill_level(bin_bbox, fill_dets, image_shape, iou_threshold=0.2):
+# Minimum confidence required to *trust* a fill-level model prediction. Anything
+# below this is treated as the model being unsure, and we fall back to the
+# geometric heuristic. Tuned so weak misclassifications (e.g. "empty 58%" on a
+# bin that's clearly full) don't get displayed as facts.
+MIN_FILL_MODEL_CONFIDENCE = 0.55
+
+
+def _assign_fill_level(bin_bbox, fill_dets, image_shape,
+                       iou_threshold=0.2,
+                       min_conf=MIN_FILL_MODEL_CONFIDENCE):
     """Pick the best matching fill-level for a bin; fallback to geometric heuristic.
+
+    The fill-level model's prediction is only trusted when it both overlaps the
+    bin bbox enough (IoU >= ``iou_threshold``) AND is confident enough
+    (>= ``min_conf``). Weak predictions are dropped and the geometric fallback
+    is used instead.
 
     Returns (fill_level, source, fill_confidence) where source is 'model' or 'heuristic'.
     """
@@ -143,7 +157,7 @@ def _assign_fill_level(bin_bbox, fill_dets, image_shape, iou_threshold=0.2):
         if iou > best_iou and iou >= iou_threshold:
             best_iou = iou
             best = fd
-    if best is not None:
+    if best is not None and float(best.get("confidence", 0.0)) >= min_conf:
         return best["fill_level"], "model", best["confidence"]
     img_h, img_w = image_shape[:2]
     return _geometric_fill_level(bin_bbox, img_w, img_h), "heuristic", None
@@ -160,28 +174,59 @@ _FILL_COLORS = {
 
 
 def _draw_annotations(image, detections):
-    """Draw bin bboxes with bin/conf and fill-level labels. Returns annotated copy."""
+    """Draw bin bboxes with a readable "Bin | Fill Level" label.
+
+    Confidence scores are intentionally not shown — the label only carries the
+    category and the chosen fill level. The label uses a solid color band
+    matching the fill level with white text for high contrast.
+    """
     out = image.copy()
+
+    # Scale annotation sizes to the image so labels stay legible on big and
+    # small frames alike.
+    h_img, w_img = out.shape[:2]
+    base = max(h_img, w_img)
+    box_thickness = max(2, base // 400)
+    font_scale = max(0.7, base / 1100.0)
+    text_thickness = max(2, int(font_scale * 2))
+    pad_x = int(8 * font_scale)
+    pad_y = int(6 * font_scale)
+
     for det in detections:
         bbox = det["bbox"]
         x1, y1, x2, y2 = (int(v) for v in bbox)
         fill = det.get("fill_level") or "unknown"
-        color = _FILL_COLORS.get(fill, (180, 180, 180))
-        cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+        color = _FILL_COLORS.get(fill, (120, 120, 120))
 
-        bin_conf = det.get("confidence", 0.0)
+        # Bin bounding box
+        cv2.rectangle(out, (x1, y1), (x2, y2), color, box_thickness)
+
+        # Label without confidence values — just category + fill level.
+        category = str(det.get("category", "bin")).title()
         fill_disp = fill.replace("_", " ").title()
-        fill_conf = det.get("fill_confidence")
-        if fill_conf is not None:
-            label = f"Bin {bin_conf:.0%} | {fill_disp} {fill_conf:.0%}"
-        else:
-            label = f"Bin {bin_conf:.0%} | {fill_disp}"
+        label = f"{category} | {fill_disp}"
 
-        (tw, th), bl = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
-        ytxt = y1 - 6 if y1 - 6 - th > 0 else y2 + th + 6
-        cv2.rectangle(out, (x1, ytxt - th - 4), (x1 + tw + 6, ytxt + bl), color, -1)
-        cv2.putText(out, label, (x1 + 3, ytxt - 2),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
+        (tw, th), baseline = cv2.getTextSize(
+            label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_thickness
+        )
+
+        # Position the label band above the box, or below if it'd clip the top.
+        band_h = th + 2 * pad_y
+        if y1 - band_h >= 0:
+            band_y1 = y1 - band_h
+            band_y2 = y1
+        else:
+            band_y1 = y2
+            band_y2 = y2 + band_h
+        band_x2 = x1 + tw + 2 * pad_x
+
+        cv2.rectangle(out, (x1, band_y1), (band_x2, band_y2), color, -1)
+        text_y = band_y2 - pad_y - baseline // 2
+        cv2.putText(
+            out, label, (x1 + pad_x, text_y),
+            cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255),
+            text_thickness, cv2.LINE_AA,
+        )
     return out
 
 
@@ -271,8 +316,11 @@ class DetectionEngine:
         else:
             bin_results = model.predict(image, conf=threshold, verbose=False)
 
-        # Run fill-level model on the same image (slightly lower to encourage matches)
-        fill_dets = _run_fill_model(image, conf=max(0.20, threshold - 0.05))
+        # Run fill-level model. Use a real confidence floor — the previous 0.20
+        # threshold let through low-confidence guesses (e.g. "empty 58%" on a
+        # clearly full bin). Pair this with MIN_FILL_MODEL_CONFIDENCE in
+        # _assign_fill_level for a final accept/reject decision.
+        fill_dets = _run_fill_model(image, conf=max(0.40, threshold))
 
         # Build enriched detection list (bin + matched fill level)
         detections = _build_bin_detections(bin_results[0], model.names, fill_dets, image.shape)
@@ -360,7 +408,8 @@ class DetectionEngine:
 
         if conf is None:
             conf = _get_configured_threshold()
-        fill_conf = max(0.20, conf - 0.05)
+        # Higher floor for the fill-level model — see _assign_fill_level.
+        fill_conf = max(0.40, conf)
 
         bin_class_indices = [
             idx for idx, name in model.names.items() if str(name).lower() == "bin"
@@ -419,6 +468,43 @@ class DetectionEngine:
                 }
         finally:
             cap.release()
+
+    def save_tracked_detection(self, category: str, confidence: float,
+                               fill_level: str, user_id: int,
+                               result_image_path: str = None,
+                               image_path: str = None) -> int:
+        """Persist a single bin detection captured from a video/stream frame.
+
+        Video detection doesn't write Detection rows for every frame (it would
+        flood the table). Callers should invoke this once per unique tracked
+        bin so AlertManager has rows to count against rule thresholds.
+
+        Returns the new Detection.id, or 0 on failure.
+        """
+        if user_id is None:
+            return 0
+        session = Session()
+        try:
+            row = Detection(
+                image_path=image_path or "",
+                result_image_path=result_image_path or "",
+                waste_category=category or "bin",
+                confidence=float(confidence) if confidence is not None else 0.0,
+                bin_fill_level=fill_level,
+                detected_by=user_id,
+                status="pending",
+                detected_at=datetime.utcnow(),
+            )
+            session.add(row)
+            session.flush()
+            row_id = int(row.id)
+            session.commit()
+            return row_id
+        except Exception:
+            session.rollback()
+            return 0
+        finally:
+            session.close()
 
     def get_detection_by_id(self, detection_id: int):
         """Return a Detection by ID or None."""

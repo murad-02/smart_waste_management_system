@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap, QImage
 
 from core.detection_engine import DetectionEngine
-from core.alert_manager import AlertManager
+from core.alert_manager import AlertManager, set_session_start
 from core.log_manager import LogManager
 from ui.widgets.toast import show_toast
 
@@ -86,6 +86,10 @@ class CameraTile(QFrame):
 
     bins_detected = pyqtSignal(int)            # n bins detected in the last frame / image
     stream_ended = pyqtSignal(int, str)        # total_bins, error
+    # Emitted once per unique tracked bin after it's been persisted to the DB.
+    # Used by DetectionScreen to re-run AlertManager.check_alerts so emails
+    # fire as soon as a "full" bin appears — not only when the stream ends.
+    bin_persisted = pyqtSignal(str)            # fill_level of the persisted bin
 
     def __init__(self, cam_name: str, engine: DetectionEngine, parent=None):
         super().__init__(parent)
@@ -100,6 +104,10 @@ class CameraTile(QFrame):
         # Tracker IDs of bins already counted in the current stream — used so
         # the same physical bin is counted once, not per-frame.
         self._seen_track_ids = set()
+        # Tracker IDs of bins already saved to the DB this stream. A unique
+        # tracked bin produces *one* Detection row so AlertManager can count
+        # against rule thresholds without the table exploding.
+        self._persisted_track_ids = set()
         self._last_pixmap = None
 
         self.setObjectName("cam-tile")
@@ -292,6 +300,17 @@ class CameraTile(QFrame):
         if self._video_worker and self._video_worker.isRunning():
             self._video_worker.stop()
 
+    def reset_session(self):
+        """Clear this tile's accumulated bin count and dedup state.
+
+        Safe to call while a stream is running — newly-seen track ids will
+        start counting again from 0.
+        """
+        self._total_bins = 0
+        self._seen_track_ids = set()
+        self._persisted_track_ids = set()
+        self._update_badge()
+
     def _is_running(self):
         return bool(
             (self._video_worker and self._video_worker.isRunning()) or
@@ -349,6 +368,7 @@ class CameraTile(QFrame):
             return
         self._total_bins = 0
         self._seen_track_ids = set()
+        self._persisted_track_ids = set()
         self._update_badge()
         self._set_status("LIVE", "#EF4444")
         self.start_btn.setText("⏹  Stop")
@@ -377,6 +397,7 @@ class CameraTile(QFrame):
         detections = payload.get("detections") or []
         new_ids = 0
         untracked = 0
+        newly_persisted_levels = []
         for det in detections:
             tid = det.get("track_id")
             if tid is None:
@@ -385,6 +406,20 @@ class CameraTile(QFrame):
             if tid not in self._seen_track_ids:
                 self._seen_track_ids.add(tid)
                 new_ids += 1
+
+            # Persist each unique tracked bin once so AlertManager has a row
+            # to count against rule thresholds. Without this, video detection
+            # would never fire any fill-level alert.
+            if tid not in self._persisted_track_ids and self.current_user:
+                saved_id = self.engine.save_tracked_detection(
+                    category=det.get("category", "bin"),
+                    confidence=det.get("confidence", 0.0),
+                    fill_level=det.get("fill_level"),
+                    user_id=self.current_user.id,
+                )
+                if saved_id:
+                    self._persisted_track_ids.add(tid)
+                    newly_persisted_levels.append(det.get("fill_level") or "")
 
         if self._seen_track_ids:
             self._total_bins = len(self._seen_track_ids)
@@ -395,6 +430,11 @@ class CameraTile(QFrame):
         self._update_badge()
         if new_ids:
             self.bins_detected.emit(new_ids)
+        # Notify the screen for each new persisted bin so alerts can be checked
+        # immediately (the alert manager dedupes per rule per day, so this is
+        # safe to call repeatedly).
+        for fl in newly_persisted_levels:
+            self.bin_persisted.emit(fl)
 
     def _on_video_done(self, total, error):
         self.start_btn.setText("▶  Start")
@@ -482,6 +522,7 @@ class DetectionScreen(QWidget):
         self.cam1 = CameraTile("CAM 01", self.engine)
         self.cam1.bins_detected.connect(self._on_bins_detected)
         self.cam1.stream_ended.connect(self._on_stream_ended)
+        self.cam1.bin_persisted.connect(self._on_bin_persisted)
         self.tiles.append(self.cam1)
         grid.addWidget(self.cam1)
         outer.addLayout(grid, 1)
@@ -509,6 +550,22 @@ class DetectionScreen(QWidget):
             b.addLayout(k["layout"])
 
         b.addStretch()
+
+        reset_btn = QPushButton("↻  Reset Session")
+        reset_btn.setCursor(Qt.PointingHandCursor)
+        reset_btn.setFixedHeight(36)
+        reset_btn.setStyleSheet(
+            "background-color: #F1F5F9; color: #0F172A; "
+            "border: 1px solid #D1D5DB; border-radius: 6px; "
+            "padding: 4px 16px; font-weight: bold; "
+            "font-size: 10pt; min-height: 0px;"
+        )
+        reset_btn.setToolTip(
+            "Zero the session bin count, clear per-camera dedup state, and "
+            "restart the session timer. Running feeds keep streaming."
+        )
+        reset_btn.clicked.connect(self._reset_session)
+        b.addWidget(reset_btn)
 
         stop_all = QPushButton("⏹  Stop All Feeds")
         stop_all.setCursor(Qt.PointingHandCursor)
@@ -542,6 +599,28 @@ class DetectionScreen(QWidget):
     def _on_bins_detected(self, n):
         self._session_bins += n
         self.kpi_session["value"].setText(str(self._session_bins))
+
+    def _on_bin_persisted(self, fill_level: str):
+        """A new tracked bin was just saved to the DB during a live stream.
+
+        Re-run check_alerts so any rule whose threshold is now crossed fires
+        its email immediately — not at the end of the video. AlertManager
+        dedupes per-rule-per-day, so calling this on every persisted bin is
+        safe and will not spam.
+        """
+        try:
+            triggered = self.alert_mgr.check_alerts()
+        except Exception:
+            triggered = []
+        for t in triggered or []:
+            show_toast(
+                self,
+                f"Alert: {t['message']}",
+                "warning" if t["severity"] == "warning" else "error",
+                5000,
+            )
+        if triggered:
+            self._refresh_alert_kpi()
 
     def _on_stream_ended(self, total, error):
         # Re-check alert rules whenever any feed finishes
@@ -580,6 +659,24 @@ class DetectionScreen(QWidget):
     def _stop_all(self):
         for t in self.tiles:
             t.stop()
+
+    def _reset_session(self):
+        """Zero the session counters and clear per-camera dedup state.
+
+        Active feeds keep streaming — bins seen *after* the reset start
+        counting from 1 again. Session-wise alert rules re-arm here, so the
+        next full bin can fire its email even if one already fired this day.
+        """
+        from datetime import datetime as _dt  # local alias to avoid shadowing
+        self._session_bins = 0
+        self._session_started = _dt.now()
+        # Move the process-wide session start used by 'session' alert rules.
+        set_session_start(_dt.utcnow())
+        self.kpi_session["value"].setText("0")
+        self.kpi_started["value"].setText(self._session_started.strftime("%H:%M:%S"))
+        for t in self.tiles:
+            t.reset_session()
+        show_toast(self, "Session reset.", "info")
 
     # ---- External wiring ---------------------------------------------------
 
