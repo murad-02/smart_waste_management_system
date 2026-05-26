@@ -74,7 +74,7 @@ class MaintenanceDialog(QDialog):
         layout.addRow("Next Service:", self.next_date_input)
 
         self.cost_input = QDoubleSpinBox()
-        self.cost_input.setPrefix("$ ")
+        self.cost_input.setPrefix("BDT ")
         self.cost_input.setRange(0.0, 1_000_000.0)
         self.cost_input.setDecimals(2)
         if self.record and self.record.cost:
@@ -211,7 +211,7 @@ class MaintenanceScreen(QWidget):
             self.table.setItem(row, 4, next_item)
 
             self.table.setItem(row, 5,
-                               QTableWidgetItem(f"${r.cost:.2f}" if r.cost else "—"))
+                               QTableWidgetItem(f"BDT {r.cost:.2f}" if r.cost else "—"))
             self.table.setItem(row, 6, QTableWidgetItem(r.notes or "—"))
             self.table.setCellWidget(row, 7, self._row_actions(r))
 

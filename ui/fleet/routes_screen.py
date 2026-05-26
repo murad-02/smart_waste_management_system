@@ -90,7 +90,7 @@ class RoutesScreen(QWidget):
 
     def set_user(self, user):
         self.current_user = user
-        self.add_btn.setEnabled(can(user, "route.create"))
+        self.add_btn.setVisible(can(user, "route.create"))
 
     def _build_ui(self):
         layout = QVBoxLayout(self)

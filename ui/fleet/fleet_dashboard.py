@@ -140,7 +140,7 @@ class FleetDashboardScreen(QWidget):
         self.maint_chart = ChartWidget(parent=self, width=4, height=3)
         self.maint_chart.setMinimumHeight(220)
         body.addWidget(self.maint_chart)
-        self.maint_summary_label = QLabel("Total: $0.00 over 0 records")
+        self.maint_summary_label = QLabel("Total: BDT 0.00 over 0 records")
         self.maint_summary_label.setStyleSheet(
             "color: #64748B; font-size: 11pt; padding-top: 4px;"
         )
@@ -217,14 +217,14 @@ class FleetDashboardScreen(QWidget):
         try:
             labels, costs = self.analytics.maintenance_trend(30)
             if sum(costs) > 0:
-                self.maint_chart.plot_line(labels, costs, "", "Date", "Cost ($)")
+                self.maint_chart.plot_line(labels, costs, "", "Date", "Cost (BDT)")
             else:
                 self.maint_chart.clear_chart()
             summary_cost = self.analytics.maintenance_cost_summary(90)
             self.maint_summary_label.setText(
-                f"Last 90 days: ${summary_cost['total_cost']:.2f} over "
+                f"Last 90 days: BDT {summary_cost['total_cost']:.2f} over "
                 f"{summary_cost['records']} records "
-                f"(avg ${summary_cost['avg_cost']:.2f})"
+                f"(avg BDT {summary_cost['avg_cost']:.2f})"
             )
         except Exception:
             self.maint_chart.clear_chart()

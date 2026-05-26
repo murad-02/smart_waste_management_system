@@ -154,7 +154,7 @@ class TrucksScreen(QWidget):
 
     def _sync_permissions(self):
         u = self.current_user
-        self.add_btn.setEnabled(can(u, "truck.create"))
+        self.add_btn.setVisible(can(u, "truck.create"))
 
     # ------------------------------------------------------------------
     def refresh_data(self):
